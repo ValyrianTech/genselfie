@@ -164,11 +164,12 @@ async def generate(
         raise HTTPException(status_code=400, detail="Invalid payment method")
     
     # Get fan image
+    import uuid
     fan_image_url = None
+    fan_image_path = None  # Filesystem path for ComfyUI
+    
     if uploaded_image and uploaded_image.filename:
         # Save uploaded image temporarily
-        import uuid
-        from config import settings as app_settings
         ext = uploaded_image.filename.split(".")[-1]
         filename = f"fan_{uuid.uuid4().hex}.{ext}"
         filepath = app_settings.upload_dir / filename
@@ -176,8 +177,10 @@ async def generate(
         with open(filepath, "wb") as f:
             f.write(content)
         fan_image_url = f"/static/uploads/{filename}"
+        fan_image_path = str(filepath)
     elif platform and handle:
         fan_image_url = await fetch_profile_image(platform, handle)
+        fan_image_path = fan_image_url  # URL for social media images
     
     if not fan_image_url:
         raise HTTPException(status_code=400, detail="No fan image provided")
@@ -208,7 +211,7 @@ async def generate(
     # Start generation
     try:
         prompt_id = await generate_selfie(
-            fan_image_url=fan_image_url,
+            fan_image_url=fan_image_path,
             influencer_images=[img.filename for img in influencer_images]
         )
         generation.prompt_id = prompt_id
