@@ -177,15 +177,13 @@ async def is_prompt_complete(prompt_id: str) -> bool:
 
 async def generate_selfie(
     fan_image_url: str,
-    influencer_images: List[str],
-    workflow_json: Optional[str] = None
+    influencer_images: List[str]
 ) -> str:
     """Generate a selfie using ComfyUI.
     
     Args:
         fan_image_url: URL or path to the fan's image
         influencer_images: List of influencer image filenames
-        workflow_json: Optional custom workflow JSON
     
     Returns:
         The prompt_id for tracking the generation
@@ -215,12 +213,8 @@ async def generate_selfie(
         if img_path.exists():
             await upload_image_to_comfyui(img_path)
     
-    # Load workflow
-    if workflow_json:
-        workflow = json.loads(workflow_json)
-    else:
-        # Use default workflow template
-        workflow = get_default_workflow()
+    # Load default workflow
+    workflow = get_default_workflow()
     
     # Inject images into workflow
     # This is workflow-specific - adjust node IDs based on your actual workflow

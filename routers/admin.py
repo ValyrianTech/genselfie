@@ -332,21 +332,3 @@ async def update_comfyui_url(
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/upload-workflow")
-async def upload_workflow(
-    request: Request,
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db)
-):
-    """Upload ComfyUI workflow JSON."""
-    if not verify_admin(request):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    content = await file.read()
-    workflow_json = content.decode("utf-8")
-    
-    settings = await db.get(Settings, 1)
-    settings.workflow_json = workflow_json
-    await db.commit()
-    
-    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)

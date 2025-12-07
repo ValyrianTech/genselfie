@@ -192,23 +192,7 @@
                 <button type="submit" class="btn btn-primary">Save URL</button>
             </form>
             
-            <div class="upload-group" style="margin-top: 20px;">
-                <h3>Workflow</h3>
-                <p>
-                    {% if settings.workflow_json %}
-                        <span class="badge badge-success">Custom workflow uploaded</span>
-                    {% else %}
-                        <span class="badge badge-success">Using default (genselfie.json)</span>
-                    {% endif %}
-                </p>
-                
-                <p class="help-text">Leave empty to use the default workflow from <code>workflows/genselfie.json</code></p>
-                
-                <form method="POST" action="/admin/upload-workflow" enctype="multipart/form-data">
-                    <input type="file" name="file" accept=".json" required>
-                    <button type="submit" class="btn btn-secondary">Upload Custom Workflow</button>
-                </form>
-            </div>
+            <p class="help-text" style="margin-top: 16px;">Workflow: <code>workflows/genselfie.json</code></p>
         </section>
 
         <!-- Recent Generations Section -->

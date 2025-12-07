@@ -197,8 +197,7 @@ async def generate(
     try:
         prompt_id = await generate_selfie(
             fan_image_url=fan_image_url,
-            influencer_images=[img.filename for img in influencer_images],
-            workflow_json=settings.workflow_json
+            influencer_images=[img.filename for img in influencer_images]
         )
         generation.prompt_id = prompt_id
         generation.status = "processing"
