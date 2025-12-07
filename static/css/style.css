@@ -280,6 +280,12 @@ body {
     font-size: 0.85rem;
 }
 
+.button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
 /* Preview */
 .preview {
     margin-top: 20px;

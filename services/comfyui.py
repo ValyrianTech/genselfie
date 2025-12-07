@@ -198,9 +198,10 @@ async def generate_selfie(
         success = await upload_image_from_url(fan_image_url, fan_filename)
     else:
         # Local file path
-        local_path = Path(fan_image_url.lstrip("/"))
+        local_path = Path(fan_image_url)
         if not local_path.is_absolute():
-            local_path = settings.base_dir / local_path
+            # Relative path - could be /static/uploads/... or just a filename
+            local_path = settings.base_dir / local_path.as_posix().lstrip("/")
         success = await upload_image_to_comfyui(local_path)
         fan_filename = local_path.name
     

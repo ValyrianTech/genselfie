@@ -11,7 +11,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings as app_settings
-from database import get_db, Settings, InfluencerImage, PromoCode, Generation, ExampleImage
+from database import get_db, Settings, InfluencerImage, PromoCode, Generation, ExampleInput, ExampleImage
 
 router = APIRouter(tags=["admin"])
 templates = Jinja2Templates(directory="templates")
@@ -53,7 +53,11 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Generation).order_by(Generation.created_at.desc()).limit(20))
     generations = result.scalars().all()
     
-    # Get example images
+    # Get example inputs
+    result = await db.execute(select(ExampleInput).order_by(ExampleInput.created_at.desc()))
+    example_inputs = result.scalars().all()
+    
+    # Get example images (generated)
     result = await db.execute(select(ExampleImage).order_by(ExampleImage.created_at.desc()))
     examples = result.scalars().all()
     
@@ -63,6 +67,7 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "images": images,
         "codes": codes,
         "generations": generations,
+        "example_inputs": example_inputs,
         "examples": examples,
         "comfyui_url": app_settings.comfyui_url,
     })
@@ -332,3 +337,182 @@ async def update_comfyui_url(
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
+@router.post("/upload-example-input")
+async def upload_example_input(
+    request: Request,
+    name: str = Form(...),
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """Upload an example input image."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Ensure examples directory exists
+    examples_dir = app_settings.upload_dir / "examples"
+    examples_dir.mkdir(exist_ok=True)
+    
+    # Save file
+    ext = Path(file.filename).suffix
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = examples_dir / filename
+    
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    # Create record
+    example_input = ExampleInput(
+        name=name,
+        filename=filename
+    )
+    db.add(example_input)
+    await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/delete-example-input/{example_id}")
+async def delete_example_input(
+    request: Request,
+    example_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete an example input image."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    example = await db.get(ExampleInput, example_id)
+    if example:
+        # Delete file
+        filepath = app_settings.upload_dir / "examples" / example.filename
+        if filepath.exists():
+            filepath.unlink()
+        
+        await db.delete(example)
+        await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/generate-example/{example_id}")
+async def generate_example(
+    request: Request,
+    example_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Generate an example selfie from an example input."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    from services.comfyui import generate_selfie, upload_image_to_comfyui
+    
+    # Get example input
+    example_input = await db.get(ExampleInput, example_id)
+    if not example_input:
+        raise HTTPException(status_code=404, detail="Example input not found")
+    
+    # Get primary influencer image
+    result = await db.execute(
+        select(InfluencerImage).where(InfluencerImage.is_primary == True)
+    )
+    influencer = result.scalar_one_or_none()
+    
+    if not influencer:
+        # Fall back to first influencer image
+        result = await db.execute(select(InfluencerImage).limit(1))
+        influencer = result.scalar_one_or_none()
+    
+    if not influencer:
+        raise HTTPException(status_code=400, detail="No influencer images configured")
+    
+    # Upload example input image to ComfyUI
+    example_path = app_settings.upload_dir / "examples" / example_input.filename
+    await upload_image_to_comfyui(example_path)
+    
+    # Create example image record
+    example_image = ExampleImage(
+        example_input_id=example_input.id,
+        celebrity_name=example_input.name,
+        input_image_url=f"/static/uploads/examples/{example_input.filename}",
+        result_image_url="",
+        status="processing"
+    )
+    db.add(example_image)
+    await db.commit()
+    await db.refresh(example_image)
+    
+    # Start generation
+    try:
+        prompt_id = await generate_selfie(
+            fan_image_url=str(example_path),
+            influencer_images=[influencer.filename]
+        )
+        example_image.prompt_id = prompt_id
+        await db.commit()
+    except Exception as e:
+        example_image.status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/generate-all-examples")
+async def generate_all_examples(
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """Generate example selfies for all example inputs."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    from services.comfyui import generate_selfie, upload_image_to_comfyui
+    
+    # Get all example inputs
+    result = await db.execute(select(ExampleInput))
+    example_inputs = result.scalars().all()
+    
+    # Get primary influencer image
+    result = await db.execute(
+        select(InfluencerImage).where(InfluencerImage.is_primary == True)
+    )
+    influencer = result.scalar_one_or_none()
+    
+    if not influencer:
+        result = await db.execute(select(InfluencerImage).limit(1))
+        influencer = result.scalar_one_or_none()
+    
+    if not influencer:
+        raise HTTPException(status_code=400, detail="No influencer images configured")
+    
+    for example_input in example_inputs:
+        # Upload example input image to ComfyUI
+        example_path = app_settings.upload_dir / "examples" / example_input.filename
+        await upload_image_to_comfyui(example_path)
+        
+        # Create example image record
+        example_image = ExampleImage(
+            example_input_id=example_input.id,
+            celebrity_name=example_input.name,
+            input_image_url=f"/static/uploads/examples/{example_input.filename}",
+            result_image_url="",
+            status="processing"
+        )
+        db.add(example_image)
+        await db.commit()
+        await db.refresh(example_image)
+        
+        # Start generation
+        try:
+            prompt_id = await generate_selfie(
+                fan_image_url=str(example_path),
+                influencer_images=[influencer.filename]
+            )
+            example_image.prompt_id = prompt_id
+            await db.commit()
+        except Exception:
+            example_image.status = "failed"
+            await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)

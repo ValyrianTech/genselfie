@@ -81,13 +81,27 @@ class Generation(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
+class ExampleInput(Base):
+    """Input images for generating example selfies (e.g., celebrity images)."""
+    __tablename__ = "example_inputs"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    filename: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class ExampleImage(Base):
     """Pre-generated example selfies with celebrities."""
     __tablename__ = "example_images"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    example_input_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     celebrity_name: Mapped[str] = mapped_column(String(255))
+    input_image_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     result_image_url: Mapped[str] = mapped_column(String(1000))
+    prompt_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
     is_visible: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -114,6 +128,9 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 async def init_db():
     """Initialize database and create tables."""
+    import shutil
+    from pathlib import Path
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
@@ -123,6 +140,27 @@ async def init_db():
         if not result:
             session.add(Settings(id=1))
             await session.commit()
+        
+        # Import example inputs from input_examples/ if none exist
+        from sqlalchemy import select
+        result = await session.execute(select(ExampleInput))
+        if not result.scalars().first():
+            input_examples_dir = settings.base_dir / "input_examples"
+            examples_upload_dir = settings.upload_dir / "examples"
+            examples_upload_dir.mkdir(exist_ok=True)
+            
+            if input_examples_dir.exists():
+                for img_path in input_examples_dir.glob("*.png"):
+                    # Copy to uploads/examples
+                    dest_path = examples_upload_dir / img_path.name
+                    shutil.copy(img_path, dest_path)
+                    
+                    # Create database record
+                    name = img_path.stem  # Filename without extension
+                    example = ExampleInput(name=name, filename=img_path.name)
+                    session.add(example)
+                
+                await session.commit()
 
 
 async def get_db() -> AsyncSession:

@@ -129,6 +129,43 @@
             </form>
         </section>
 
+        <!-- Example Inputs Section -->
+        <section class="admin-section">
+            <h2>Example Inputs</h2>
+            <p class="help-text">Images used to generate example selfies (e.g., celebrities, fictional characters)</p>
+            
+            <div class="image-grid">
+                {% for example in example_inputs %}
+                <div class="image-card">
+                    <img src="/static/uploads/examples/{{ example.filename }}" alt="{{ example.name }}">
+                    <div class="image-info">
+                        <span>{{ example.name }}</span>
+                    </div>
+                    <div class="button-group">
+                        <form method="POST" action="/admin/generate-example/{{ example.id }}" style="display: inline;">
+                            <button type="submit" class="btn btn-primary btn-small">Generate</button>
+                        </form>
+                        <form method="POST" action="/admin/delete-example-input/{{ example.id }}" style="display: inline;">
+                            <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <form method="POST" action="/admin/upload-example-input" enctype="multipart/form-data" class="upload-form">
+                <input type="text" name="name" placeholder="Name (e.g., Santa Claus)" required>
+                <input type="file" name="file" accept="image/*" required>
+                <button type="submit" class="btn btn-primary">Add Example Input</button>
+            </form>
+            
+            {% if example_inputs %}
+            <form method="POST" action="/admin/generate-all-examples" style="margin-top: 16px;">
+                <button type="submit" class="btn btn-secondary">Generate All Examples</button>
+            </form>
+            {% endif %}
+        </section>
+
         <!-- Promo Codes Section -->
         <section class="admin-section">
             <h2>Promo Codes</h2>
