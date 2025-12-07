@@ -184,15 +184,17 @@
             
             <p>
                 {% if settings.workflow_json %}
-                    <span class="badge badge-success">Workflow configured</span>
+                    <span class="badge badge-success">Custom workflow uploaded</span>
                 {% else %}
-                    <span class="badge badge-warning">No workflow uploaded</span>
+                    <span class="badge badge-success">Using default (genselfie.json)</span>
                 {% endif %}
             </p>
             
+            <p class="help-text">Leave empty to use the default workflow from <code>workflows/genselfie.json</code></p>
+            
             <form method="POST" action="/admin/upload-workflow" enctype="multipart/form-data">
                 <input type="file" name="file" accept=".json" required>
-                <button type="submit" class="btn btn-primary">Upload Workflow JSON</button>
+                <button type="submit" class="btn btn-secondary">Upload Custom Workflow</button>
             </form>
         </section>
 
