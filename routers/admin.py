@@ -243,10 +243,17 @@ async def delete_influencer_image(
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
+def generate_random_code(length: int = 8) -> str:
+    """Generate a random promo code."""
+    import string
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
+
 @router.post("/create-code")
 async def create_promo_code(
     request: Request,
-    code: str = Form(...),
+    code: str = Form(""),
     max_uses: Optional[int] = Form(None),
     expires_at: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db)
@@ -254,6 +261,11 @@ async def create_promo_code(
     """Create a new promo code."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Generate random code if empty
+    code = code.strip().upper()
+    if not code:
+        code = generate_random_code()
     
     # Parse expiry date
     expiry = None
@@ -264,7 +276,7 @@ async def create_promo_code(
             pass
     
     promo = PromoCode(
-        code=code.upper().strip(),
+        code=code,
         uses_remaining=max_uses,
         max_uses=max_uses,
         expires_at=expiry
