@@ -50,9 +50,14 @@ async def upload_image_to_comfyui(image_path: Path, timeout: float = 60.0) -> bo
                     data=data, 
                     timeout=timeout
                 )
+            if response.status_code != 200:
+                print(f"[ERROR] Upload failed with status {response.status_code}: {response.text}")
             return response.status_code == 200
         except httpx.RequestError as e:
-            print(f"[ERROR] Upload failed: {e}")
+            print(f"[ERROR] Upload failed: {type(e).__name__}: {e}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] Upload failed unexpectedly: {type(e).__name__}: {e}")
             return False
 
 
@@ -72,11 +77,14 @@ async def upload_image_from_url(image_url: str, filename: str) -> bool:
     async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
             # Download image
+            print(f"[DEBUG] Downloading image from: {image_url}")
             response = await client.get(image_url, timeout=30.0)
             if response.status_code != 200:
+                print(f"[ERROR] Failed to download image: status {response.status_code}")
                 return False
             
             image_data = response.content
+            print(f"[DEBUG] Downloaded {len(image_data)} bytes, uploading to {upload_url}")
             
             # Upload to ComfyUI
             files = {"image": (filename, image_data, "image/png")}
@@ -87,9 +95,14 @@ async def upload_image_from_url(image_url: str, filename: str) -> bool:
                 data=data,
                 timeout=60.0
             )
+            if upload_response.status_code != 200:
+                print(f"[ERROR] Upload failed with status {upload_response.status_code}: {upload_response.text}")
             return upload_response.status_code == 200
         except httpx.RequestError as e:
-            print(f"[ERROR] Upload from URL failed: {e}")
+            print(f"[ERROR] Upload from URL failed: {type(e).__name__}: {e}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] Upload from URL failed unexpectedly: {type(e).__name__}: {e}")
             return False
 
 
@@ -297,6 +310,29 @@ async def get_generation_status(prompt_id: str) -> dict:
                 return {"completed": True, "image_url": image_url}
     
     return {"completed": True, "image_url": None}
+
+
+async def download_output_image(image_url: str, save_path: Path) -> bool:
+    """Download an output image from ComfyUI and save it locally.
+    
+    Args:
+        image_url: URL of the image on ComfyUI server
+        save_path: Local path to save the image
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(image_url, timeout=60.0)
+            if response.status_code == 200:
+                save_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(save_path, "wb") as f:
+                    f.write(response.content)
+                return True
+        except httpx.RequestError as e:
+            print(f"[ERROR] Failed to download image: {e}")
+    return False
 
 
 def get_default_workflow() -> dict:

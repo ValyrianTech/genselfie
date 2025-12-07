@@ -516,3 +516,70 @@ async def generate_all_examples(
             await db.commit()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/delete-example/{example_id}")
+async def delete_example(
+    request: Request,
+    example_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete a generated example image."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    example = await db.get(ExampleImage, example_id)
+    if example:
+        # Delete the file if it exists
+        if example.result_image_url:
+            filepath = app_settings.base_dir / example.result_image_url.lstrip("/")
+            if filepath.exists():
+                filepath.unlink()
+        
+        await db.delete(example)
+        await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/check-example-status")
+async def check_example_status(
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """Check status of processing examples and download completed images."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    from services.comfyui import get_generation_status, download_output_image
+    
+    # Get all processing examples
+    result = await db.execute(
+        select(ExampleImage).where(ExampleImage.status == "processing")
+    )
+    processing_examples = result.scalars().all()
+    
+    for example in processing_examples:
+        if not example.prompt_id:
+            continue
+        
+        status_result = await get_generation_status(example.prompt_id)
+        
+        if status_result.get("completed"):
+            image_url = status_result.get("image_url")
+            if image_url:
+                # Download and save the image
+                filename = f"example_{example.id}_{uuid.uuid4().hex[:8]}.png"
+                save_path = app_settings.upload_dir / "generated" / filename
+                
+                if await download_output_image(image_url, save_path):
+                    example.result_image_url = f"/static/uploads/generated/{filename}"
+                    example.status = "completed"
+                else:
+                    example.status = "failed"
+            else:
+                example.status = "failed"
+            
+            await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
