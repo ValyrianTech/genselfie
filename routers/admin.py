@@ -11,13 +11,45 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings as app_settings
-from database import get_db, Settings, InfluencerImage, PromoCode, Generation, ExampleInput, ExampleImage
+from database import get_db, Settings, InfluencerImage, PromoCode, Generation
 
 router = APIRouter(tags=["admin"])
 templates = Jinja2Templates(directory="templates")
 
 # Simple session storage (in production, use proper session management)
 admin_sessions: set[str] = set()
+
+
+def get_example_inputs_from_disk() -> list[dict]:
+    """Get example input images from the examples directory."""
+    examples_dir = app_settings.upload_dir / "examples"
+    inputs = []
+    
+    if examples_dir.exists():
+        for img_path in sorted(examples_dir.glob("*.png"), key=lambda p: p.name):
+            inputs.append({
+                "filename": img_path.name,
+                "name": img_path.stem,
+                "url": f"/static/uploads/examples/{img_path.name}"
+            })
+    
+    return inputs
+
+
+def get_generated_examples_from_disk() -> list[dict]:
+    """Get generated example images from the generated directory."""
+    generated_dir = app_settings.upload_dir / "generated"
+    examples = []
+    
+    if generated_dir.exists():
+        for img_path in sorted(generated_dir.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True):
+            examples.append({
+                "filename": img_path.name,
+                "name": img_path.stem,
+                "url": f"/static/uploads/generated/{img_path.name}"
+            })
+    
+    return examples
 
 
 def get_session_token(request: Request) -> Optional[str]:
@@ -53,13 +85,11 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Generation).order_by(Generation.created_at.desc()).limit(20))
     generations = result.scalars().all()
     
-    # Get example inputs
-    result = await db.execute(select(ExampleInput).order_by(ExampleInput.created_at.desc()))
-    example_inputs = result.scalars().all()
+    # Get example inputs from disk
+    example_inputs = get_example_inputs_from_disk()
     
-    # Get example images (generated)
-    result = await db.execute(select(ExampleImage).order_by(ExampleImage.created_at.desc()))
-    examples = result.scalars().all()
+    # Get generated examples from disk
+    generated_examples = get_generated_examples_from_disk()
     
     return templates.TemplateResponse("admin.html", {
         "request": request,
@@ -68,7 +98,7 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "codes": codes,
         "generations": generations,
         "example_inputs": example_inputs,
-        "examples": examples,
+        "generated_examples": generated_examples,
         "comfyui_url": app_settings.comfyui_url,
     })
 
@@ -340,9 +370,7 @@ async def update_comfyui_url(
 @router.post("/upload-example-input")
 async def upload_example_input(
     request: Request,
-    name: str = Form(...),
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db)
+    file: UploadFile = File(...)
 ):
     """Upload an example input image."""
     if not verify_admin(request):
@@ -352,64 +380,60 @@ async def upload_example_input(
     examples_dir = app_settings.upload_dir / "examples"
     examples_dir.mkdir(exist_ok=True)
     
-    # Save file
-    ext = Path(file.filename).suffix
-    filename = f"{uuid.uuid4().hex}{ext}"
+    # Save file with original name (sanitized)
+    original_name = Path(file.filename).stem
+    ext = Path(file.filename).suffix or ".png"
+    # Sanitize filename
+    safe_name = "".join(c for c in original_name if c.isalnum() or c in "._- ")
+    filename = f"{safe_name}{ext}"
     filepath = examples_dir / filename
+    
+    # If file exists, add a suffix
+    counter = 1
+    while filepath.exists():
+        filename = f"{safe_name}_{counter}{ext}"
+        filepath = examples_dir / filename
+        counter += 1
     
     content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
     
-    # Create record
-    example_input = ExampleInput(
-        name=name,
-        filename=filename
-    )
-    db.add(example_input)
-    await db.commit()
-    
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/delete-example-input/{example_id}")
+@router.post("/delete-example-input/{filename:path}")
 async def delete_example_input(
     request: Request,
-    example_id: int,
-    db: AsyncSession = Depends(get_db)
+    filename: str
 ):
     """Delete an example input image."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    example = await db.get(ExampleInput, example_id)
-    if example:
-        # Delete file
-        filepath = app_settings.upload_dir / "examples" / example.filename
-        if filepath.exists():
-            filepath.unlink()
-        
-        await db.delete(example)
-        await db.commit()
+    filepath = app_settings.upload_dir / "examples" / filename
+    if filepath.exists():
+        filepath.unlink()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/generate-example/{example_id}")
+@router.post("/generate-example/{filename:path}")
 async def generate_example(
     request: Request,
-    example_id: int,
+    filename: str,
     db: AsyncSession = Depends(get_db)
 ):
     """Generate an example selfie from an example input."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    from services.comfyui import generate_selfie, upload_image_to_comfyui
+    from services.comfyui import generate_selfie, upload_image_to_comfyui, download_output_image, get_generation_status
+    import asyncio
     
-    # Get example input
-    example_input = await db.get(ExampleInput, example_id)
-    if not example_input:
+    # Verify file exists
+    example_path = app_settings.upload_dir / "examples" / filename
+    if not example_path.exists():
         raise HTTPException(status_code=404, detail="Example input not found")
     
     # Get primary influencer image
@@ -419,7 +443,6 @@ async def generate_example(
     influencer = result.scalar_one_or_none()
     
     if not influencer:
-        # Fall back to first influencer image
         result = await db.execute(select(InfluencerImage).limit(1))
         influencer = result.scalar_one_or_none()
     
@@ -427,33 +450,28 @@ async def generate_example(
         raise HTTPException(status_code=400, detail="No influencer images configured")
     
     # Upload example input image to ComfyUI
-    example_path = app_settings.upload_dir / "examples" / example_input.filename
     await upload_image_to_comfyui(example_path)
     
-    # Create example image record
-    example_image = ExampleImage(
-        example_input_id=example_input.id,
-        celebrity_name=example_input.name,
-        input_image_url=f"/static/uploads/examples/{example_input.filename}",
-        result_image_url="",
-        status="processing"
-    )
-    db.add(example_image)
-    await db.commit()
-    await db.refresh(example_image)
-    
     # Start generation
-    try:
-        prompt_id = await generate_selfie(
-            fan_image_url=str(example_path),
-            influencer_images=[influencer.filename]
-        )
-        example_image.prompt_id = prompt_id
-        await db.commit()
-    except Exception as e:
-        example_image.status = "failed"
-        await db.commit()
-        raise HTTPException(status_code=500, detail=str(e))
+    prompt_id = await generate_selfie(
+        fan_image_url=str(example_path),
+        influencer_images=[influencer.filename]
+    )
+    
+    # Poll for completion and download result
+    for _ in range(120):  # Wait up to 2 minutes
+        await asyncio.sleep(1)
+        status_result = await get_generation_status(prompt_id)
+        if status_result.get("completed"):
+            image_url = status_result.get("image_url")
+            if image_url:
+                # Download and save
+                generated_dir = app_settings.upload_dir / "generated"
+                generated_dir.mkdir(exist_ok=True)
+                output_filename = f"{example_path.stem}_{uuid.uuid4().hex[:8]}.png"
+                save_path = generated_dir / output_filename
+                await download_output_image(image_url, save_path)
+            break
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -467,11 +485,11 @@ async def generate_all_examples(
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    from services.comfyui import generate_selfie, upload_image_to_comfyui
+    from services.comfyui import generate_selfie, upload_image_to_comfyui, download_output_image, get_generation_status
+    import asyncio
     
-    # Get all example inputs
-    result = await db.execute(select(ExampleInput))
-    example_inputs = result.scalars().all()
+    # Get all example inputs from disk
+    example_inputs = get_example_inputs_from_disk()
     
     # Get primary influencer image
     result = await db.execute(
@@ -486,100 +504,52 @@ async def generate_all_examples(
     if not influencer:
         raise HTTPException(status_code=400, detail="No influencer images configured")
     
-    for example_input in example_inputs:
-        # Upload example input image to ComfyUI
-        example_path = app_settings.upload_dir / "examples" / example_input.filename
+    # Track all prompt IDs
+    generations = []
+    
+    for example in example_inputs:
+        example_path = app_settings.upload_dir / "examples" / example["filename"]
         await upload_image_to_comfyui(example_path)
         
-        # Create example image record
-        example_image = ExampleImage(
-            example_input_id=example_input.id,
-            celebrity_name=example_input.name,
-            input_image_url=f"/static/uploads/examples/{example_input.filename}",
-            result_image_url="",
-            status="processing"
-        )
-        db.add(example_image)
-        await db.commit()
-        await db.refresh(example_image)
-        
-        # Start generation
         try:
             prompt_id = await generate_selfie(
                 fan_image_url=str(example_path),
                 influencer_images=[influencer.filename]
             )
-            example_image.prompt_id = prompt_id
-            await db.commit()
-        except Exception:
-            example_image.status = "failed"
-            await db.commit()
+            generations.append({"prompt_id": prompt_id, "name": example["name"]})
+        except Exception as e:
+            print(f"[ERROR] Failed to generate for {example['name']}: {e}")
+    
+    # Poll for completions and download results
+    generated_dir = app_settings.upload_dir / "generated"
+    generated_dir.mkdir(exist_ok=True)
+    
+    for gen in generations:
+        for _ in range(120):  # Wait up to 2 minutes per image
+            await asyncio.sleep(1)
+            status_result = await get_generation_status(gen["prompt_id"])
+            if status_result.get("completed"):
+                image_url = status_result.get("image_url")
+                if image_url:
+                    output_filename = f"{gen['name']}_{uuid.uuid4().hex[:8]}.png"
+                    save_path = generated_dir / output_filename
+                    await download_output_image(image_url, save_path)
+                break
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/delete-example/{example_id}")
-async def delete_example(
+@router.post("/delete-generated/{filename:path}")
+async def delete_generated(
     request: Request,
-    example_id: int,
-    db: AsyncSession = Depends(get_db)
+    filename: str
 ):
     """Delete a generated example image."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    example = await db.get(ExampleImage, example_id)
-    if example:
-        # Delete the file if it exists
-        if example.result_image_url:
-            filepath = app_settings.base_dir / example.result_image_url.lstrip("/")
-            if filepath.exists():
-                filepath.unlink()
-        
-        await db.delete(example)
-        await db.commit()
-    
-    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
-
-
-@router.post("/check-example-status")
-async def check_example_status(
-    request: Request,
-    db: AsyncSession = Depends(get_db)
-):
-    """Check status of processing examples and download completed images."""
-    if not verify_admin(request):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    from services.comfyui import get_generation_status, download_output_image
-    
-    # Get all processing examples
-    result = await db.execute(
-        select(ExampleImage).where(ExampleImage.status == "processing")
-    )
-    processing_examples = result.scalars().all()
-    
-    for example in processing_examples:
-        if not example.prompt_id:
-            continue
-        
-        status_result = await get_generation_status(example.prompt_id)
-        
-        if status_result.get("completed"):
-            image_url = status_result.get("image_url")
-            if image_url:
-                # Download and save the image
-                filename = f"example_{example.id}_{uuid.uuid4().hex[:8]}.png"
-                save_path = app_settings.upload_dir / "generated" / filename
-                
-                if await download_output_image(image_url, save_path):
-                    example.result_image_url = f"/static/uploads/generated/{filename}"
-                    example.status = "completed"
-                else:
-                    example.status = "failed"
-            else:
-                example.status = "failed"
-            
-            await db.commit()
+    filepath = app_settings.upload_dir / "generated" / filename
+    if filepath.exists():
+        filepath.unlink()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)

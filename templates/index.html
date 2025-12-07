@@ -27,8 +27,7 @@
         <div class="gallery">
             {% for example in examples %}
             <div class="gallery-item">
-                <img src="{{ example.result_image_url }}" alt="Selfie with {{ example.celebrity_name }}">
-                <span class="celebrity-name">with {{ example.celebrity_name }}</span>
+                <img src="{{ example.url }}" alt="Example selfie">
             </div>
             {% endfor %}
         </div>

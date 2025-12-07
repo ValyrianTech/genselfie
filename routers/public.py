@@ -1,11 +1,13 @@
 from typing import Optional
+from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db, Settings, InfluencerImage, ExampleImage, Generation, PromoCode
+from config import settings as app_settings
+from database import get_db, Settings, InfluencerImage, Generation, PromoCode
 from services.social import fetch_profile_image
 from services.codes import validate_and_consume_code
 from services.comfyui import generate_selfie, get_generation_status
@@ -15,19 +17,29 @@ router = APIRouter(tags=["public"])
 templates = Jinja2Templates(directory="templates")
 
 
+def get_example_images_from_disk() -> list[dict]:
+    """Get example images directly from the generated directory."""
+    generated_dir = app_settings.upload_dir / "generated"
+    examples = []
+    
+    if generated_dir.exists():
+        for img_path in sorted(generated_dir.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True):
+            examples.append({
+                "url": f"/static/uploads/generated/{img_path.name}",
+                "name": img_path.stem
+            })
+    
+    return examples
+
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request, db: AsyncSession = Depends(get_db)):
     """Main fan-facing page."""
     # Get settings
     settings = await db.get(Settings, 1)
     
-    # Get example images
-    result = await db.execute(
-        select(ExampleImage)
-        .where(ExampleImage.is_visible == True)
-        .order_by(ExampleImage.created_at.desc())
-    )
-    examples = result.scalars().all()
+    # Get example images from disk
+    examples = get_example_images_from_disk()
     
     return templates.TemplateResponse("index.html", {
         "request": request,

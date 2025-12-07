@@ -132,20 +132,20 @@
         <!-- Example Inputs Section -->
         <section class="admin-section">
             <h2>Example Inputs</h2>
-            <p class="help-text">Images used to generate example selfies (e.g., celebrities, fictional characters)</p>
+            <p class="help-text">Images in <code>static/uploads/examples/</code> - used to generate example selfies</p>
             
             <div class="image-grid">
                 {% for example in example_inputs %}
                 <div class="image-card">
-                    <img src="/static/uploads/examples/{{ example.filename }}" alt="{{ example.name }}">
+                    <img src="{{ example.url }}" alt="{{ example.name }}">
                     <div class="image-info">
                         <span>{{ example.name }}</span>
                     </div>
                     <div class="button-group">
-                        <form method="POST" action="/admin/generate-example/{{ example.id }}" style="display: inline;">
+                        <form method="POST" action="/admin/generate-example/{{ example.filename }}" style="display: inline;">
                             <button type="submit" class="btn btn-primary btn-small">Generate</button>
                         </form>
-                        <form method="POST" action="/admin/delete-example-input/{{ example.id }}" style="display: inline;">
+                        <form method="POST" action="/admin/delete-example-input/{{ example.filename }}" style="display: inline;">
                             <button type="submit" class="btn btn-danger btn-small">Delete</button>
                         </form>
                     </div>
@@ -154,7 +154,6 @@
             </div>
             
             <form method="POST" action="/admin/upload-example-input" enctype="multipart/form-data" class="upload-form">
-                <input type="text" name="name" placeholder="Name (e.g., Santa Claus)" required>
                 <input type="file" name="file" accept="image/*" required>
                 <button type="submit" class="btn btn-primary">Add Example Input</button>
             </form>
@@ -164,35 +163,20 @@
                 <form method="POST" action="/admin/generate-all-examples">
                     <button type="submit" class="btn btn-secondary">Generate All Examples</button>
                 </form>
-                <form method="POST" action="/admin/check-example-status">
-                    <button type="submit" class="btn btn-secondary">Check Status & Download</button>
-                </form>
             </div>
             {% endif %}
             
             <!-- Generated Examples -->
-            {% set completed_examples = examples | selectattr('status', 'equalto', 'completed') | list %}
-            {% set processing_examples = examples | selectattr('status', 'equalto', 'processing') | list %}
-            
-            {% if processing_examples %}
-            <div style="margin-top: 20px;">
-                <h3>Processing ({{ processing_examples | length }})</h3>
-                <p class="help-text">Click "Check Status & Download" to update</p>
-            </div>
-            {% endif %}
-            
-            {% if completed_examples %}
+            {% if generated_examples %}
             <div style="margin-top: 20px;">
                 <h3>Generated Examples</h3>
+                <p class="help-text">Images in <code>static/uploads/generated/</code></p>
                 <div class="image-grid">
-                    {% for example in completed_examples %}
+                    {% for example in generated_examples %}
                     <div class="image-card">
-                        <img src="{{ example.result_image_url }}" alt="{{ example.celebrity_name }}">
-                        <div class="image-info">
-                            <span>{{ example.celebrity_name }}</span>
-                        </div>
+                        <img src="{{ example.url }}" alt="{{ example.name }}">
                         <div class="button-group">
-                            <form method="POST" action="/admin/delete-example/{{ example.id }}" style="display: inline;">
+                            <form method="POST" action="/admin/delete-generated/{{ example.filename }}" style="display: inline;">
                                 <button type="submit" class="btn btn-danger btn-small">Delete</button>
                             </form>
                         </div>
