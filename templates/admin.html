@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - {{ settings.app_name }}{% endblock %}
+
+{% block body %}
+<div class="admin-container">
+    <header class="admin-header">
+        <h1>{{ settings.app_name }} Admin</h1>
+        <form method="POST" action="/admin/logout" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Logout</button>
+        </form>
+    </header>
+
+    <div class="admin-grid">
+        <!-- Settings Section -->
+        <section class="admin-section">
+            <h2>App Settings</h2>
+            <form method="POST" action="/admin/settings">
+                <div class="form-group">
+                    <label for="app_name">App Name</label>
+                    <input type="text" id="app_name" name="app_name" value="{{ settings.app_name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tagline">Tagline</label>
+                    <input type="text" id="tagline" name="tagline" value="{{ settings.tagline }}">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="primary_color">Primary Color</label>
+                        <input type="color" id="primary_color" name="primary_color" value="{{ settings.primary_color }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="secondary_color">Secondary Color</label>
+                        <input type="color" id="secondary_color" name="secondary_color" value="{{ settings.secondary_color }}">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="price_cents">Price (cents)</label>
+                        <input type="number" id="price_cents" name="price_cents" value="{{ settings.price_cents }}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="currency">Currency</label>
+                        <select id="currency" name="currency">
+                            <option value="USD" {% if settings.currency == 'USD' %}selected{% endif %}>USD</option>
+                            <option value="EUR" {% if settings.currency == 'EUR' %}selected{% endif %}>EUR</option>
+                            <option value="GBP" {% if settings.currency == 'GBP' %}selected{% endif %}>GBP</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Payment Methods</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" name="codes_enabled" {% if settings.codes_enabled %}checked{% endif %}>
+                            Promo Codes
+                        </label>
+                        <label>
+                            <input type="checkbox" name="stripe_enabled" {% if settings.stripe_enabled %}checked{% endif %}>
+                            Stripe
+                        </label>
+                        <label>
+                            <input type="checkbox" name="lightning_enabled" {% if settings.lightning_enabled %}checked{% endif %}>
+                            Lightning
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </form>
+        </section>
+
+        <!-- Branding Section -->
+        <section class="admin-section">
+            <h2>Branding</h2>
+            
+            <div class="upload-group">
+                <h3>Banner Image</h3>
+                {% if settings.banner_image %}
+                <img src="/static/uploads/{{ settings.banner_image }}" alt="Current banner" class="preview-small">
+                {% endif %}
+                <form method="POST" action="/admin/upload-banner" enctype="multipart/form-data">
+                    <input type="file" name="file" accept="image/*" required>
+                    <button type="submit" class="btn btn-secondary">Upload Banner</button>
+                </form>
+            </div>
+            
+            <div class="upload-group">
+                <h3>Logo</h3>
+                {% if settings.logo_image %}
+                <img src="/static/uploads/{{ settings.logo_image }}" alt="Current logo" class="preview-small logo-preview">
+                {% endif %}
+                <form method="POST" action="/admin/upload-logo" enctype="multipart/form-data">
+                    <input type="file" name="file" accept="image/*" required>
+                    <button type="submit" class="btn btn-secondary">Upload Logo</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Influencer Images Section -->
+        <section class="admin-section">
+            <h2>Influencer Reference Images</h2>
+            
+            <div class="image-grid">
+                {% for image in images %}
+                <div class="image-card">
+                    <img src="/static/uploads/{{ image.filename }}" alt="{{ image.original_name }}">
+                    <div class="image-info">
+                        <span>{{ image.original_name }}</span>
+                        {% if image.is_primary %}<span class="badge">Primary</span>{% endif %}
+                    </div>
+                    <form method="POST" action="/admin/delete-influencer-image/{{ image.id }}">
+                        <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <form method="POST" action="/admin/upload-influencer-image" enctype="multipart/form-data" class="upload-form">
+                <input type="file" name="file" accept="image/*" required>
+                <label>
+                    <input type="checkbox" name="is_primary"> Set as primary
+                </label>
+                <button type="submit" class="btn btn-primary">Upload Image</button>
+            </form>
+        </section>
+
+        <!-- Promo Codes Section -->
+        <section class="admin-section">
+            <h2>Promo Codes</h2>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Uses</th>
+                        <th>Expires</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for code in codes %}
+                    <tr>
+                        <td><code>{{ code.code }}</code></td>
+                        <td>
+                            {% if code.uses_remaining is not none %}
+                                {{ code.uses_remaining }} / {{ code.max_uses }}
+                            {% else %}
+                                Unlimited
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if code.expires_at %}
+                                {{ code.expires_at.strftime('%Y-%m-%d') }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="/admin/delete-code/{{ code.id }}" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <form method="POST" action="/admin/create-code" class="inline-form">
+                <input type="text" name="code" placeholder="CODE" required style="text-transform: uppercase;">
+                <input type="number" name="max_uses" placeholder="Max uses (empty = unlimited)" min="1">
+                <input type="date" name="expires_at" placeholder="Expiry date">
+                <button type="submit" class="btn btn-primary">Create Code</button>
+            </form>
+        </section>
+
+        <!-- Workflow Section -->
+        <section class="admin-section">
+            <h2>ComfyUI Workflow</h2>
+            
+            <p>
+                {% if settings.workflow_json %}
+                    <span class="badge badge-success">Workflow configured</span>
+                {% else %}
+                    <span class="badge badge-warning">No workflow uploaded</span>
+                {% endif %}
+            </p>
+            
+            <form method="POST" action="/admin/upload-workflow" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".json" required>
+                <button type="submit" class="btn btn-primary">Upload Workflow JSON</button>
+            </form>
+        </section>
+
+        <!-- Recent Generations Section -->
+        <section class="admin-section full-width">
+            <h2>Recent Generations</h2>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Platform</th>
+                        <th>Handle</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gen in generations %}
+                    <tr>
+                        <td>{{ gen.id }}</td>
+                        <td>{{ gen.fan_platform or '-' }}</td>
+                        <td>{{ gen.fan_handle or '-' }}</td>
+                        <td>
+                            {{ gen.payment_method }}
+                            {% if gen.promo_code_used %}({{ gen.promo_code_used }}){% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if gen.status == 'completed' else 'warning' if gen.status == 'processing' else 'error' if gen.status == 'failed' else 'default' }}">
+                                {{ gen.status }}
+                            </span>
+                        </td>
+                        <td>{{ gen.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </div>
+</div>
+{% endblock %}

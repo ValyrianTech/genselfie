@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <!-- Header -->
+    <header class="header">
+        {% if settings.banner_image %}
+        <div class="banner" style="background-image: url('/static/uploads/{{ settings.banner_image }}')"></div>
+        {% endif %}
+        <div class="header-content">
+            {% if settings.logo_image %}
+            <img src="/static/uploads/{{ settings.logo_image }}" alt="{{ settings.app_name }}" class="logo">
+            {% endif %}
+            <h1>{{ settings.app_name }}</h1>
+            <p class="tagline">{{ settings.tagline }}</p>
+        </div>
+    </header>
+
+    <!-- Examples Gallery -->
+    {% if examples %}
+    <section class="examples">
+        <h2>Examples</h2>
+        <div class="gallery">
+            {% for example in examples %}
+            <div class="gallery-item">
+                <img src="{{ example.result_image_url }}" alt="Selfie with {{ example.celebrity_name }}">
+                <span class="celebrity-name">with {{ example.celebrity_name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Generation Form -->
+    <section class="generate-section">
+        <h2>Get Your Selfie</h2>
+        
+        <!-- Step 1: Profile Image -->
+        <div class="step" id="step-image">
+            <h3>Step 1: Your Photo</h3>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="social">Social Media</button>
+                <button class="tab" data-tab="upload">Upload Photo</button>
+            </div>
+            
+            <div class="tab-content active" id="tab-social">
+                <div class="form-group">
+                    <label for="platform">Platform</label>
+                    <select id="platform" name="platform">
+                        <option value="twitter">Twitter / X</option>
+                        <option value="bluesky">Bluesky</option>
+                        <option value="github">GitHub</option>
+                        <option value="mastodon">Mastodon</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="handle">Handle</label>
+                    <input type="text" id="handle" name="handle" placeholder="username">
+                    <small class="help-text" id="handle-help">Enter your Twitter/X username without @</small>
+                </div>
+                <button type="button" class="btn btn-secondary" id="fetch-profile">Fetch Profile Photo</button>
+            </div>
+            
+            <div class="tab-content" id="tab-upload">
+                <div class="form-group">
+                    <label for="photo-upload">Upload a photo</label>
+                    <input type="file" id="photo-upload" name="photo" accept="image/*">
+                </div>
+            </div>
+            
+            <div class="preview" id="image-preview" style="display: none;">
+                <img id="preview-img" src="" alt="Your photo">
+                <span class="preview-label">Your photo</span>
+            </div>
+        </div>
+
+        <!-- Step 2: Payment -->
+        <div class="step" id="step-payment">
+            <h3>Step 2: Payment</h3>
+            
+            <div class="price-display">
+                <span class="price">{{ "%.2f"|format(settings.price_cents / 100) }} {{ settings.currency }}</span>
+            </div>
+            
+            <div class="payment-options">
+                {% if settings.codes_enabled %}
+                <div class="payment-option">
+                    <h4>Promo Code</h4>
+                    <div class="form-group">
+                        <input type="text" id="promo-code" placeholder="Enter code">
+                        <button type="button" class="btn btn-secondary" id="validate-code">Apply</button>
+                    </div>
+                    <div id="code-status"></div>
+                </div>
+                {% endif %}
+                
+                {% if settings.stripe_enabled %}
+                <div class="payment-option">
+                    <h4>Pay with Card</h4>
+                    <div id="stripe-element"></div>
+                    <button type="button" class="btn btn-primary" id="pay-stripe">Pay Now</button>
+                </div>
+                {% endif %}
+                
+                {% if settings.lightning_enabled %}
+                <div class="payment-option">
+                    <h4>Pay with Bitcoin Lightning</h4>
+                    <button type="button" class="btn btn-primary" id="pay-lightning">Generate Invoice</button>
+                    <div id="lightning-invoice" style="display: none;">
+                        <canvas id="lightning-qr"></canvas>
+                        <input type="text" id="lightning-request" readonly>
+                        <button type="button" class="btn btn-secondary" id="copy-invoice">Copy</button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Step 3: Generate -->
+        <div class="step" id="step-generate" style="display: none;">
+            <h3>Step 3: Generate!</h3>
+            <button type="button" class="btn btn-primary btn-large" id="generate-btn">Generate Selfie</button>
+        </div>
+
+        <!-- Result -->
+        <div class="step" id="step-result" style="display: none;">
+            <h3>Your Selfie</h3>
+            <div class="result-container">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Generating your selfie...</p>
+                </div>
+                <div id="result" style="display: none;">
+                    <img id="result-img" src="" alt="Generated selfie">
+                    <div class="result-actions">
+                        <a id="download-btn" href="" download class="btn btn-primary">Download</a>
+                        <button type="button" class="btn btn-secondary" id="new-selfie">Generate Another</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="/static/js/app.js"></script>
+{% endblock %}
