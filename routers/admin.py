@@ -64,6 +64,7 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "codes": codes,
         "generations": generations,
         "examples": examples,
+        "comfyui_url": app_settings.comfyui_url,
     })
 
 
@@ -306,6 +307,27 @@ async def delete_promo_code(
     if code:
         await db.delete(code)
         await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/comfyui-url")
+async def update_comfyui_url(
+    request: Request,
+    comfyui_url: str = Form("")
+):
+    """Update ComfyUI server URL in .env file."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    from dotenv import set_key
+    from config import ENV_PATH
+    
+    # Update .env file
+    set_key(str(ENV_PATH), "COMFYUI_URL", comfyui_url.strip())
+    
+    # Update runtime config
+    app_settings.comfyui_url = comfyui_url.strip()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 

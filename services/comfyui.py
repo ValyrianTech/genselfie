@@ -17,6 +17,10 @@ import httpx
 
 from config import settings
 
+def get_comfyui_url() -> str:
+    """Get the ComfyUI URL from .env config."""
+    return settings.comfyui_url.rstrip("/")
+
 
 async def upload_image_to_comfyui(image_path: Path, timeout: float = 60.0) -> bool:
     """Upload an image to ComfyUI's input folder.
@@ -28,7 +32,8 @@ async def upload_image_to_comfyui(image_path: Path, timeout: float = 60.0) -> bo
     Returns:
         True if upload succeeded, False otherwise
     """
-    upload_url = f"{settings.comfyui_url}/upload/image"
+    base_url = get_comfyui_url()
+    upload_url = f"{base_url}/upload/image"
     
     if not image_path.exists():
         print(f"[ERROR] Image not found: {image_path}")
@@ -61,7 +66,8 @@ async def upload_image_from_url(image_url: str, filename: str) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    upload_url = f"{settings.comfyui_url}/upload/image"
+    base_url = get_comfyui_url()
+    upload_url = f"{base_url}/upload/image"
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
@@ -96,7 +102,8 @@ async def queue_prompt(workflow: dict) -> Optional[str]:
     Returns:
         The prompt_id if successful, None otherwise
     """
-    prompt_url = f"{settings.comfyui_url}/prompt"
+    base_url = get_comfyui_url()
+    prompt_url = f"{base_url}/prompt"
     
     async with httpx.AsyncClient() as client:
         try:
@@ -116,7 +123,8 @@ async def queue_prompt(workflow: dict) -> Optional[str]:
 
 async def get_queue_status() -> dict:
     """Get current ComfyUI queue status."""
-    queue_url = f"{settings.comfyui_url}/queue"
+    base_url = get_comfyui_url()
+    queue_url = f"{base_url}/queue"
     
     async with httpx.AsyncClient() as client:
         try:
@@ -138,7 +146,8 @@ async def get_history(prompt_id: str) -> Optional[dict]:
     Returns:
         History data if available, None otherwise
     """
-    history_url = f"{settings.comfyui_url}/history/{prompt_id}"
+    base_url = get_comfyui_url()
+    history_url = f"{base_url}/history/{prompt_id}"
     
     async with httpx.AsyncClient() as client:
         try:
@@ -242,6 +251,8 @@ async def get_generation_status(prompt_id: str) -> dict:
     Returns:
         Dict with 'completed' bool and 'image_url' if completed
     """
+    base_url = get_comfyui_url()
+    
     # Check if still processing
     if not await is_prompt_complete(prompt_id):
         return {"completed": False}
@@ -269,9 +280,9 @@ async def get_generation_status(prompt_id: str) -> dict:
             
             if filename:
                 if subfolder:
-                    image_url = f"{settings.comfyui_url}/output/{subfolder}/{filename}"
+                    image_url = f"{base_url}/output/{subfolder}/{filename}"
                 else:
-                    image_url = f"{settings.comfyui_url}/output/{filename}"
+                    image_url = f"{base_url}/output/{filename}"
                 
                 return {"completed": True, "image_url": image_url}
         
@@ -284,9 +295,9 @@ async def get_generation_status(prompt_id: str) -> dict:
             
             if filename:
                 if subfolder:
-                    image_url = f"{settings.comfyui_url}/output/{subfolder}/{filename}"
+                    image_url = f"{base_url}/output/{subfolder}/{filename}"
                 else:
-                    image_url = f"{settings.comfyui_url}/output/{filename}"
+                    image_url = f"{base_url}/output/{filename}"
                 
                 return {"completed": True, "image_url": image_url}
     

@@ -32,7 +32,7 @@ class Settings(Base):
     lightning_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     codes_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     
-    # ComfyUI workflow settings
+    # ComfyUI workflow
     workflow_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
