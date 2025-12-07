@@ -294,13 +294,15 @@ async def get_generation_status(prompt_id: str) -> dict:
 
 
 def get_default_workflow() -> dict:
-    """Return a default/placeholder workflow.
+    """Load the default workflow from workflows/genselfie.json."""
+    workflow_path = settings.base_dir / "workflows" / "genselfie.json"
     
-    This should be replaced with your actual selfie generation workflow.
-    """
-    # Placeholder - you'll need to provide your actual workflow
+    if workflow_path.exists():
+        with open(workflow_path, "r") as f:
+            return json.load(f)
+    
     return {
-        "error": "No workflow configured. Please upload a workflow in admin settings."
+        "error": "No workflow configured. Please add workflows/genselfie.json"
     }
 
 
@@ -311,49 +313,29 @@ def inject_images_into_workflow(
 ) -> dict:
     """Inject image filenames into the workflow.
     
-    This is workflow-specific. Adjust node IDs based on your actual workflow.
-    Common patterns:
-    - LoadImage nodes have an "image" input
-    - The node ID varies by workflow
+    Based on genselfie.json workflow structure:
+    - Node 42: Influencer image (LoadImage)
+    - Node 46: Fan image (LoadImage)
     """
-    # Example: Look for LoadImage nodes and inject images
-    # You'll need to customize this based on your workflow structure
+    # Node 42: Influencer image
+    if "42" in workflow and influencer_image:
+        workflow["42"]["inputs"]["image"] = influencer_image
     
-    for node_id, node in workflow.items():
-        if not isinstance(node, dict):
-            continue
-        
-        class_type = node.get("class_type", "")
-        inputs = node.get("inputs", {})
-        
-        # Look for image loader nodes
-        if class_type == "LoadImage":
-            # Check if this is meant for fan or influencer based on title or other hints
-            title = node.get("_meta", {}).get("title", "").lower()
-            
-            if "fan" in title or "input" in title:
-                inputs["image"] = fan_image
-            elif "influencer" in title or "reference" in title:
-                if influencer_image:
-                    inputs["image"] = influencer_image
+    # Node 46: Fan image
+    if "46" in workflow:
+        workflow["46"]["inputs"]["image"] = fan_image
     
     return workflow
 
 
 def set_random_seed(workflow: dict) -> dict:
-    """Set a random seed in sampler nodes."""
-    for node_id, node in workflow.items():
-        if not isinstance(node, dict):
-            continue
-        
-        class_type = node.get("class_type", "")
-        inputs = node.get("inputs", {})
-        
-        # Common sampler node types
-        if "Sampler" in class_type or "KSampler" in class_type:
-            if "seed" in inputs:
-                inputs["seed"] = random.randint(0, 2**32 - 1)
-            if "noise_seed" in inputs:
-                inputs["noise_seed"] = random.randint(0, 2**32 - 1)
+    """Set a random seed in the RandomNoise node.
+    
+    Based on genselfie.json workflow structure:
+    - Node 25: RandomNoise with noise_seed
+    """
+    # Node 25: RandomNoise
+    if "25" in workflow:
+        workflow["25"]["inputs"]["noise_seed"] = random.randint(0, 2**53 - 1)
     
     return workflow
