@@ -27,19 +27,19 @@
         <span class="queue-info" id="queue-info"></span>
     </div>
 
-    <!-- Examples Gallery -->
-    {% if examples %}
+    <!-- Examples Gallery (always rendered so JS can populate per preset) -->
     <section class="examples" id="examples-section">
         <h2>Examples</h2>
         <div class="gallery" id="examples-gallery">
-            {% for example in examples %}
-            <div class="gallery-item">
-                <img src="{{ example.url }}" alt="Example selfie">
-            </div>
-            {% endfor %}
+            {% if examples %}
+                {% for example in examples %}
+                <div class="gallery-item">
+                    <img src="{{ example.url }}" alt="Example selfie">
+                </div>
+                {% endfor %}
+            {% endif %}
         </div>
     </section>
-    {% endif %}
 
     <!-- Offline Message (shown by default until status is checked) -->
     <section class="offline-message" id="offline-message">
