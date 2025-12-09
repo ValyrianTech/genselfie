@@ -196,6 +196,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkedPreset = document.querySelector('.preset-option input[type="radio"]:checked');
         if (checkedPreset) {
             state.presetId = checkedPreset.value;
+            // Load examples for initial preset
+            refreshExamples(state.presetId);
         }
         
         presetOptions.forEach(option => {
@@ -209,9 +211,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (radio) {
                     radio.checked = true;
                     state.presetId = radio.value;
+                    refreshExamples(state.presetId);
                 }
             });
         });
+    }
+
+    async function refreshExamples(presetId) {
+        try {
+            const url = presetId ? `/api/examples?preset_id=${encodeURIComponent(presetId)}` : '/api/examples';
+            const res = await fetch(url);
+            const data = await res.json();
+            const gallery = document.getElementById('examples-gallery');
+            const section = document.getElementById('examples-section');
+            if (!gallery || !section) return;
+            gallery.innerHTML = '';
+            if (data.examples && data.examples.length) {
+                data.examples.forEach(ex => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    const img = document.createElement('img');
+                    img.src = ex.url;
+                    img.alt = 'Example selfie';
+                    item.appendChild(img);
+                    gallery.appendChild(item);
+                });
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        } catch (e) {
+            console.error('Failed to load examples', e);
+        }
     }
 
     // Validate promo code

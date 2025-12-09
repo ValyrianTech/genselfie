@@ -29,9 +29,9 @@
 
     <!-- Examples Gallery -->
     {% if examples %}
-    <section class="examples">
+    <section class="examples" id="examples-section">
         <h2>Examples</h2>
-        <div class="gallery">
+        <div class="gallery" id="examples-gallery">
             {% for example in examples %}
             <div class="gallery-item">
                 <img src="{{ example.url }}" alt="Example selfie">

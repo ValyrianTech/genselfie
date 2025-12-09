@@ -17,15 +17,25 @@ router = APIRouter(tags=["public"])
 templates = Jinja2Templates(directory="templates")
 
 
-def get_example_images_from_disk() -> list[dict]:
-    """Get example images directly from the generated directory."""
+def get_example_images_from_disk(preset_id: Optional[int] = None) -> list[dict]:
+    """Get example images directly from the generated directory.
+    If preset_id is provided, try static/uploads/generated/<preset_id>/ first,
+    otherwise fall back to static/uploads/generated/ root.
+    """
     generated_dir = app_settings.upload_dir / "generated"
+    # If preset-specific folder exists, prefer it
+    if preset_id is not None:
+        preset_dir = generated_dir / str(preset_id)
+        if preset_dir.exists():
+            generated_dir = preset_dir
     examples = []
     
     if generated_dir.exists():
         for img_path in sorted(generated_dir.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True):
+            # Build URL reflecting preset subfolder if present
+            rel_path = img_path.relative_to(app_settings.upload_dir)
             examples.append({
-                "url": f"/static/uploads/generated/{img_path.name}",
+                "url": f"/static/uploads/{rel_path.as_posix()}",
                 "name": img_path.stem
             })
     
@@ -38,8 +48,7 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
     # Get settings
     settings = await db.get(Settings, 1)
     
-    # Get example images from disk
-    examples = get_example_images_from_disk()
+    # Get example images from disk (initially for first active preset if available)
     
     # Get active presets
     result = await db.execute(
@@ -48,6 +57,8 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
         .order_by(Preset.sort_order, Preset.created_at)
     )
     presets = result.scalars().all()
+    first_preset_id = presets[0].id if presets else None
+    examples = get_example_images_from_disk(first_preset_id)
     
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -55,6 +66,17 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
         "examples": examples,
         "presets": presets,
     })
+
+
+@router.get("/api/examples")
+async def api_examples(preset_id: Optional[int] = None):
+    """Return example images for an optional preset_id."""
+    try:
+        pid = int(preset_id) if preset_id is not None else None
+    except (TypeError, ValueError):
+        pid = None
+    examples = get_example_images_from_disk(pid)
+    return JSONResponse({"examples": examples})
 
 
 @router.get("/api/server-status")
