@@ -129,6 +129,86 @@
             </form>
         </section>
 
+        <!-- Presets Section -->
+        <section class="admin-section">
+            <h2>Generation Presets</h2>
+            <p class="help-text">Create presets combining an influencer image with specific dimensions and prompts</p>
+            
+            {% if presets %}
+            <div class="presets-list">
+                {% for preset in presets %}
+                <div class="preset-card {% if not preset.is_active %}preset-inactive{% endif %}">
+                    <div class="preset-header">
+                        <h3>{{ preset.name }}</h3>
+                        <span class="badge {% if preset.is_active %}badge-success{% else %}badge-muted{% endif %}">
+                            {{ "Active" if preset.is_active else "Inactive" }}
+                        </span>
+                    </div>
+                    {% if preset.description %}
+                    <p class="preset-description">{{ preset.description }}</p>
+                    {% endif %}
+                    <div class="preset-details">
+                        <span><strong>Size:</strong> {{ preset.width }}x{{ preset.height }}</span>
+                        <span><strong>Image ID:</strong> {{ preset.influencer_image_id }}</span>
+                    </div>
+                    {% if preset.prompt %}
+                    <div class="preset-prompt">
+                        <strong>Prompt:</strong> {{ preset.prompt[:100] }}{% if preset.prompt|length > 100 %}...{% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="button-group">
+                        <form method="POST" action="/admin/toggle-preset/{{ preset.id }}" style="display: inline;">
+                            <button type="submit" class="btn btn-secondary btn-small">
+                                {{ "Disable" if preset.is_active else "Enable" }}
+                            </button>
+                        </form>
+                        <form method="POST" action="/admin/delete-preset/{{ preset.id }}" style="display: inline;">
+                            <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <h3 style="margin-top: 24px;">Create New Preset</h3>
+            <form method="POST" action="/admin/create-preset" class="preset-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preset-name">Name</label>
+                        <input type="text" id="preset-name" name="name" placeholder="e.g., Close-up Selfie" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-image">Influencer Image</label>
+                        <select id="preset-image" name="influencer_image_id" required>
+                            {% for image in images %}
+                            <option value="{{ image.id }}">{{ image.original_name }}{% if image.is_primary %} (Primary){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preset-width">Width</label>
+                        <input type="number" id="preset-width" name="width" value="1024" min="256" max="2048">
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-height">Height</label>
+                        <input type="number" id="preset-height" name="height" value="1024" min="256" max="2048">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="preset-description">Description (optional)</label>
+                    <input type="text" id="preset-description" name="description" placeholder="Brief description of this preset">
+                </div>
+                <div class="form-group">
+                    <label for="preset-prompt">Prompt (optional)</label>
+                    <textarea id="preset-prompt" name="prompt" rows="3" placeholder="Custom prompt for this preset..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Preset</button>
+            </form>
+        </section>
+
         <!-- Example Inputs Section -->
         <section class="admin-section">
             <h2>Example Inputs</h2>

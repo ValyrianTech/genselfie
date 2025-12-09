@@ -81,6 +81,22 @@ class Generation(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
+class Preset(Base):
+    """Generation presets combining influencer image, dimensions, and prompt."""
+    __tablename__ = "presets"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))  # e.g., "Close-up Selfie", "Full Body"
+    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    influencer_image_id: Mapped[int] = mapped_column(Integer)  # FK to influencer_images
+    width: Mapped[int] = mapped_column(Integer, default=1024)
+    height: Mapped[int] = mapped_column(Integer, default=1024)
+    prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Custom prompt for this preset
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class ExampleInput(Base):
     """Input images for generating example selfies (e.g., celebrity images)."""
     __tablename__ = "example_inputs"

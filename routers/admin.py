@@ -11,7 +11,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings as app_settings
-from database import get_db, Settings, InfluencerImage, PromoCode, Generation
+from database import get_db, Settings, InfluencerImage, PromoCode, Generation, Preset
 
 router = APIRouter(tags=["admin"])
 templates = Jinja2Templates(directory="templates")
@@ -91,6 +91,10 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
     # Get generated examples from disk
     generated_examples = get_generated_examples_from_disk()
     
+    # Get presets
+    result = await db.execute(select(Preset).order_by(Preset.sort_order, Preset.created_at))
+    presets = result.scalars().all()
+    
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "settings": settings,
@@ -99,6 +103,7 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "generations": generations,
         "example_inputs": example_inputs,
         "generated_examples": generated_examples,
+        "presets": presets,
         "comfyui_url": app_settings.comfyui_url,
     })
 
@@ -551,5 +556,112 @@ async def delete_generated(
     filepath = app_settings.upload_dir / "generated" / filename
     if filepath.exists():
         filepath.unlink()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ============== Preset Management ==============
+
+@router.post("/create-preset")
+async def create_preset(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(""),
+    influencer_image_id: int = Form(...),
+    width: int = Form(1024),
+    height: int = Form(1024),
+    prompt: str = Form(""),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new preset."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Get max sort order
+    result = await db.execute(select(Preset).order_by(Preset.sort_order.desc()).limit(1))
+    last_preset = result.scalar_one_or_none()
+    sort_order = (last_preset.sort_order + 1) if last_preset else 0
+    
+    preset = Preset(
+        name=name,
+        description=description if description else None,
+        influencer_image_id=influencer_image_id,
+        width=width,
+        height=height,
+        prompt=prompt if prompt else None,
+        sort_order=sort_order
+    )
+    db.add(preset)
+    await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/update-preset/{preset_id}")
+async def update_preset(
+    request: Request,
+    preset_id: int,
+    name: str = Form(...),
+    description: str = Form(""),
+    influencer_image_id: int = Form(...),
+    width: int = Form(1024),
+    height: int = Form(1024),
+    prompt: str = Form(""),
+    is_active: bool = Form(False),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update an existing preset."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    preset = await db.get(Preset, preset_id)
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    
+    preset.name = name
+    preset.description = description if description else None
+    preset.influencer_image_id = influencer_image_id
+    preset.width = width
+    preset.height = height
+    preset.prompt = prompt if prompt else None
+    preset.is_active = is_active
+    
+    await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/delete-preset/{preset_id}")
+async def delete_preset(
+    request: Request,
+    preset_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete a preset."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    preset = await db.get(Preset, preset_id)
+    if preset:
+        await db.delete(preset)
+        await db.commit()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/toggle-preset/{preset_id}")
+async def toggle_preset(
+    request: Request,
+    preset_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Toggle a preset's active status."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    preset = await db.get(Preset, preset_id)
+    if preset:
+        preset.is_active = not preset.is_active
+        await db.commit()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
