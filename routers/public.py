@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings as app_settings
-from database import get_db, Settings, InfluencerImage, Generation, PromoCode
+from database import get_db, Settings, InfluencerImage, Generation, PromoCode, Preset
 from services.social import fetch_profile_image
 from services.codes import validate_and_consume_code
 from services.comfyui import generate_selfie, get_generation_status, get_queue_status
@@ -41,10 +41,19 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
     # Get example images from disk
     examples = get_example_images_from_disk()
     
+    # Get active presets
+    result = await db.execute(
+        select(Preset)
+        .where(Preset.is_active == True)
+        .order_by(Preset.sort_order, Preset.created_at)
+    )
+    presets = result.scalars().all()
+    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "settings": settings,
         "examples": examples,
+        "presets": presets,
     })
 
 
@@ -163,11 +172,19 @@ async def generate(
     promo_code: Optional[str] = Form(None),
     platform: Optional[str] = Form(None),
     handle: Optional[str] = Form(None),
+    preset_id: Optional[int] = Form(None),
     uploaded_image: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db)
 ):
     """Generate a selfie after payment verification."""
     settings = await db.get(Settings, 1)
+    
+    # Get preset if specified
+    preset = None
+    if preset_id:
+        preset = await db.get(Preset, preset_id)
+        if not preset or not preset.is_active:
+            raise HTTPException(status_code=400, detail="Invalid or inactive preset")
     
     # Verify payment
     if payment_method == "code":
@@ -219,11 +236,19 @@ async def generate(
     if not fan_image_url:
         raise HTTPException(status_code=400, detail="No fan image provided")
     
-    # Get influencer images
-    result = await db.execute(
-        select(InfluencerImage).order_by(InfluencerImage.is_primary.desc())
-    )
-    influencer_images = result.scalars().all()
+    # Get influencer image(s) - use preset's image if specified, otherwise use all
+    if preset:
+        # Use the specific influencer image from the preset
+        influencer_image = await db.get(InfluencerImage, preset.influencer_image_id)
+        if not influencer_image:
+            raise HTTPException(status_code=400, detail="Preset's influencer image not found")
+        influencer_images = [influencer_image]
+    else:
+        # Fall back to all influencer images (primary first)
+        result = await db.execute(
+            select(InfluencerImage).order_by(InfluencerImage.is_primary.desc())
+        )
+        influencer_images = result.scalars().all()
     
     if not influencer_images:
         raise HTTPException(status_code=400, detail="No influencer images configured")
@@ -242,11 +267,14 @@ async def generate(
     await db.commit()
     await db.refresh(generation)
     
-    # Start generation
+    # Start generation with preset settings if available
     try:
         prompt_id = await generate_selfie(
             fan_image_url=fan_image_path,
-            influencer_images=[img.filename for img in influencer_images]
+            influencer_images=[img.filename for img in influencer_images],
+            width=preset.width if preset else None,
+            height=preset.height if preset else None,
+            prompt=preset.prompt if preset else None
         )
         generation.prompt_id = prompt_id
         generation.status = "processing"

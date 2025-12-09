@@ -790,3 +790,55 @@ body {
     resize: vertical;
     font-family: inherit;
 }
+
+/* Preset Options (Fan Page) */
+.preset-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.preset-option {
+    display: block;
+    cursor: pointer;
+}
+
+.preset-option input[type="radio"] {
+    display: none;
+}
+
+.preset-option-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.preset-option:hover .preset-option-content {
+    border-color: var(--primary-color);
+}
+
+.preset-option.selected .preset-option-content,
+.preset-option input[type="radio"]:checked + .preset-option-content {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.preset-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.preset-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.preset-size {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}

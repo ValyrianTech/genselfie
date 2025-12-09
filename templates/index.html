@@ -94,7 +94,28 @@
             </div>
         </div>
 
-        <!-- Step 2: Payment -->
+        <!-- Step 2: Choose Style (Presets) -->
+        {% if presets %}
+        <div class="step" id="step-preset">
+            <h3>Step 2: Choose Style</h3>
+            <div class="preset-options">
+                {% for preset in presets %}
+                <label class="preset-option {% if loop.first %}selected{% endif %}">
+                    <input type="radio" name="preset_id" value="{{ preset.id }}" {% if loop.first %}checked{% endif %}>
+                    <div class="preset-option-content">
+                        <span class="preset-name">{{ preset.name }}</span>
+                        {% if preset.description %}
+                        <span class="preset-desc">{{ preset.description }}</span>
+                        {% endif %}
+                        <span class="preset-size">{{ preset.width }}x{{ preset.height }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Step {{ "3" if presets else "2" }}: Payment -->
         <div class="step" id="step-payment">
             <h3>Step 2: Payment</h3>
             

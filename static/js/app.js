@@ -57,7 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
         paymentMethod: null,
         paymentId: null,
         promoCode: null,
-        generationId: null
+        generationId: null,
+        presetId: null
     };
 
     // Elements
@@ -185,6 +186,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 reader.readAsDataURL(file);
             }
+        });
+    }
+
+    // Preset selection
+    const presetOptions = document.querySelectorAll('.preset-option');
+    if (presetOptions.length > 0) {
+        // Set initial preset from first checked radio
+        const checkedPreset = document.querySelector('.preset-option input[type="radio"]:checked');
+        if (checkedPreset) {
+            state.presetId = checkedPreset.value;
+        }
+        
+        presetOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Update visual selection
+                presetOptions.forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Update state
+                const radio = option.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.checked = true;
+                    state.presetId = radio.value;
+                }
+            });
         });
     }
 
@@ -380,6 +406,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (state.uploadedFile) {
                     formData.append('uploaded_image', state.uploadedFile);
+                }
+                if (state.presetId) {
+                    formData.append('preset_id', state.presetId);
                 }
                 
                 const response = await fetch('/api/generate', {

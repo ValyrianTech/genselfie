@@ -203,13 +203,19 @@ async def is_prompt_complete(prompt_id: str) -> bool:
 
 async def generate_selfie(
     fan_image_url: str,
-    influencer_images: List[str]
+    influencer_images: List[str],
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    prompt: Optional[str] = None
 ) -> str:
     """Generate a selfie using ComfyUI.
     
     Args:
         fan_image_url: URL or path to the fan's image
         influencer_images: List of influencer image filenames
+        width: Optional output width (from preset)
+        height: Optional output height (from preset)
+        prompt: Optional custom prompt (from preset)
     
     Returns:
         The prompt_id for tracking the generation
@@ -220,6 +226,10 @@ async def generate_selfie(
     logger.info("Starting selfie generation...")
     logger.debug(f"Fan image: {fan_image_url}")
     logger.debug(f"Influencer images: {influencer_images}")
+    if width and height:
+        logger.debug(f"Preset dimensions: {width}x{height}")
+    if prompt:
+        logger.debug(f"Preset prompt: {prompt[:50]}...")
     
     # Upload fan image to ComfyUI
     fan_filename = f"fan_{random.randint(100000, 999999)}.png"
@@ -259,6 +269,12 @@ async def generate_selfie(
         fan_image=fan_filename,
         influencer_image=influencer_images[0] if influencer_images else None
     )
+    
+    # Apply preset settings if provided
+    if width and height:
+        workflow = set_dimensions(workflow, width, height)
+    if prompt:
+        workflow = set_prompt(workflow, prompt)
     
     # Set random seed
     workflow = set_random_seed(workflow)
@@ -415,5 +431,48 @@ def set_random_seed(workflow: dict) -> dict:
     # Node 25: RandomNoise
     if "25" in workflow:
         workflow["25"]["inputs"]["noise_seed"] = random.randint(0, 2**53 - 1)
+    
+    return workflow
+
+
+def set_dimensions(workflow: dict, width: int, height: int) -> dict:
+    """Set output dimensions in the workflow.
+    
+    Looks for nodes that have width/height inputs.
+    """
+    for node_id, node in workflow.items():
+        if not isinstance(node, dict):
+            continue
+        inputs = node.get("inputs", {})
+        class_type = node.get("class_type", "")
+        
+        # Common node types that have width/height
+        if class_type in [
+            "EmptyLatentImage", "EmptySD3LatentImage", "EmptyImage",
+            "EmptyFlux2LatentImage", "Flux2Scheduler"
+        ]:
+            if "width" in inputs:
+                inputs["width"] = width
+            if "height" in inputs:
+                inputs["height"] = height
+    
+    return workflow
+
+
+def set_prompt(workflow: dict, prompt_text: str) -> dict:
+    """Set the prompt text in the workflow.
+    
+    Looks for CLIPTextEncode or similar nodes that have text inputs.
+    """
+    for node_id, node in workflow.items():
+        if not isinstance(node, dict):
+            continue
+        inputs = node.get("inputs", {})
+        class_type = node.get("class_type", "")
+        
+        # Common prompt node types
+        if class_type in ["CLIPTextEncode", "CLIPTextEncodeSDXL"]:
+            if "text" in inputs:
+                inputs["text"] = prompt_text
     
     return workflow
