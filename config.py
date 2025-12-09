@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 from pathlib import Path
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
     # App settings
     app_name: str = "GenSelfie"
     debug: bool = False
+    verbose: bool = False
     
     # Admin
     admin_password: str = ""
@@ -58,3 +60,23 @@ settings = Settings(admin_password=_admin_password)
 
 # Ensure upload directory exists
 settings.upload_dir.mkdir(parents=True, exist_ok=True)
+
+# Configure logging
+logger = logging.getLogger("genselfie")
+
+
+def setup_logging(verbose: bool = False):
+    """Configure logging based on verbose flag."""
+    # Set root logger to INFO to avoid noisy library debug messages
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    
+    # Only enable DEBUG for our app logger when verbose
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+        logger.debug("Verbose logging enabled")
+    else:
+        logger.setLevel(logging.INFO)

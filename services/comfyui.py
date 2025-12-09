@@ -15,7 +15,7 @@ from typing import Optional, List
 
 import httpx
 
-from config import settings
+from config import settings, logger
 
 def get_comfyui_url() -> str:
     """Get the ComfyUI URL from .env config."""
@@ -36,8 +36,10 @@ async def upload_image_to_comfyui(image_path: Path, timeout: float = 60.0) -> bo
     upload_url = f"{base_url}/upload/image"
     
     if not image_path.exists():
-        print(f"[ERROR] Image not found: {image_path}")
+        logger.error(f"Image not found: {image_path}")
         return False
+    
+    logger.debug(f"Uploading image to ComfyUI: {image_path.name}")
     
     async with httpx.AsyncClient() as client:
         try:
@@ -51,13 +53,15 @@ async def upload_image_to_comfyui(image_path: Path, timeout: float = 60.0) -> bo
                     timeout=timeout
                 )
             if response.status_code != 200:
-                print(f"[ERROR] Upload failed with status {response.status_code}: {response.text}")
-            return response.status_code == 200
+                logger.error(f"Upload failed with status {response.status_code}: {response.text}")
+                return False
+            logger.debug(f"Upload successful: {image_path.name}")
+            return True
         except httpx.RequestError as e:
-            print(f"[ERROR] Upload failed: {type(e).__name__}: {e}")
+            logger.error(f"Upload failed: {type(e).__name__}: {e}")
             return False
         except Exception as e:
-            print(f"[ERROR] Upload failed unexpectedly: {type(e).__name__}: {e}")
+            logger.error(f"Upload failed unexpectedly: {type(e).__name__}: {e}")
             return False
 
 
@@ -74,17 +78,18 @@ async def upload_image_from_url(image_url: str, filename: str) -> bool:
     base_url = get_comfyui_url()
     upload_url = f"{base_url}/upload/image"
     
+    logger.debug(f"Downloading image from URL: {image_url}")
+    
     async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
             # Download image
-            print(f"[DEBUG] Downloading image from: {image_url}")
             response = await client.get(image_url, timeout=30.0)
             if response.status_code != 200:
-                print(f"[ERROR] Failed to download image: status {response.status_code}")
+                logger.error(f"Failed to download image: status {response.status_code}")
                 return False
             
             image_data = response.content
-            print(f"[DEBUG] Downloaded {len(image_data)} bytes, uploading to {upload_url}")
+            logger.debug(f"Downloaded {len(image_data)} bytes, uploading as {filename}")
             
             # Upload to ComfyUI
             files = {"image": (filename, image_data, "image/png")}
@@ -96,13 +101,15 @@ async def upload_image_from_url(image_url: str, filename: str) -> bool:
                 timeout=60.0
             )
             if upload_response.status_code != 200:
-                print(f"[ERROR] Upload failed with status {upload_response.status_code}: {upload_response.text}")
-            return upload_response.status_code == 200
+                logger.error(f"Upload failed with status {upload_response.status_code}: {upload_response.text}")
+                return False
+            logger.debug(f"Upload from URL successful: {filename}")
+            return True
         except httpx.RequestError as e:
-            print(f"[ERROR] Upload from URL failed: {type(e).__name__}: {e}")
+            logger.error(f"Upload from URL failed: {type(e).__name__}: {e}")
             return False
         except Exception as e:
-            print(f"[ERROR] Upload from URL failed unexpectedly: {type(e).__name__}: {e}")
+            logger.error(f"Upload from URL failed unexpectedly: {type(e).__name__}: {e}")
             return False
 
 
@@ -118,6 +125,8 @@ async def queue_prompt(workflow: dict) -> Optional[str]:
     base_url = get_comfyui_url()
     prompt_url = f"{base_url}/prompt"
     
+    logger.debug("Queueing prompt on ComfyUI...")
+    
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
@@ -127,9 +136,13 @@ async def queue_prompt(workflow: dict) -> Optional[str]:
             )
             if response.status_code == 200:
                 data = response.json()
-                return data.get("prompt_id")
+                prompt_id = data.get("prompt_id")
+                logger.debug(f"Prompt queued successfully: {prompt_id}")
+                return prompt_id
+            else:
+                logger.error(f"Queue prompt failed with status {response.status_code}: {response.text}")
         except httpx.RequestError as e:
-            print(f"[ERROR] Queue prompt failed: {e}")
+            logger.error(f"Queue prompt failed: {e}")
     
     return None
 
@@ -204,10 +217,15 @@ async def generate_selfie(
     Raises:
         Exception if generation fails to start
     """
+    logger.info("Starting selfie generation...")
+    logger.debug(f"Fan image: {fan_image_url}")
+    logger.debug(f"Influencer images: {influencer_images}")
+    
     # Upload fan image to ComfyUI
     fan_filename = f"fan_{random.randint(100000, 999999)}.png"
     
     if fan_image_url.startswith("http"):
+        logger.debug(f"Fan image is URL, downloading and uploading...")
         success = await upload_image_from_url(fan_image_url, fan_filename)
     else:
         # Local file path
@@ -215,23 +233,27 @@ async def generate_selfie(
         if not local_path.is_absolute():
             # Relative path - could be /static/uploads/... or just a filename
             local_path = settings.base_dir / local_path.as_posix().lstrip("/")
+        logger.debug(f"Fan image is local file: {local_path}")
         success = await upload_image_to_comfyui(local_path)
         fan_filename = local_path.name
     
     if not success:
+        logger.error("Failed to upload fan image to ComfyUI")
         raise Exception("Failed to upload fan image to ComfyUI")
     
     # Upload influencer images if they're local
+    logger.debug("Uploading influencer images...")
     for img_filename in influencer_images:
         img_path = settings.upload_dir / img_filename
         if img_path.exists():
             await upload_image_to_comfyui(img_path)
     
     # Load default workflow
+    logger.debug("Loading workflow...")
     workflow = get_default_workflow()
     
     # Inject images into workflow
-    # This is workflow-specific - adjust node IDs based on your actual workflow
+    logger.debug("Injecting images into workflow...")
     workflow = inject_images_into_workflow(
         workflow,
         fan_image=fan_filename,
@@ -245,8 +267,10 @@ async def generate_selfie(
     prompt_id = await queue_prompt(workflow)
     
     if not prompt_id:
+        logger.error("Failed to queue prompt on ComfyUI")
         raise Exception("Failed to queue prompt on ComfyUI")
     
+    logger.info(f"Generation started with prompt_id: {prompt_id}")
     return prompt_id
 
 
@@ -263,12 +287,16 @@ async def get_generation_status(prompt_id: str) -> dict:
     
     # Check if still processing
     if not await is_prompt_complete(prompt_id):
+        logger.debug(f"Prompt {prompt_id} still processing...")
         return {"completed": False}
+    
+    logger.debug(f"Prompt {prompt_id} complete, fetching result...")
     
     # Get history for result
     history = await get_history(prompt_id)
     
     if not history or prompt_id not in history:
+        logger.debug(f"No history found for prompt {prompt_id}")
         return {"completed": False}
     
     prompt_history = history[prompt_id]
@@ -292,6 +320,7 @@ async def get_generation_status(prompt_id: str) -> dict:
                 else:
                     image_url = f"{base_url}/output/{filename}"
                 
+                logger.info(f"Generation complete: {image_url}")
                 return {"completed": True, "image_url": image_url}
         
         # Check for gifs (video output)
@@ -307,8 +336,10 @@ async def get_generation_status(prompt_id: str) -> dict:
                 else:
                     image_url = f"{base_url}/output/{filename}"
                 
+                logger.info(f"Generation complete (gif): {image_url}")
                 return {"completed": True, "image_url": image_url}
     
+    logger.warning(f"Generation complete but no output found for prompt {prompt_id}")
     return {"completed": True, "image_url": None}
 
 
@@ -322,6 +353,8 @@ async def download_output_image(image_url: str, save_path: Path) -> bool:
     Returns:
         True if successful, False otherwise
     """
+    logger.debug(f"Downloading output image: {image_url}")
+    
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(image_url, timeout=60.0)
@@ -329,9 +362,12 @@ async def download_output_image(image_url: str, save_path: Path) -> bool:
                 save_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(save_path, "wb") as f:
                     f.write(response.content)
+                logger.debug(f"Image saved to: {save_path}")
                 return True
+            else:
+                logger.error(f"Failed to download image: status {response.status_code}")
         except httpx.RequestError as e:
-            print(f"[ERROR] Failed to download image: {e}")
+            logger.error(f"Failed to download image: {e}")
     return False
 
 

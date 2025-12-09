@@ -28,9 +28,19 @@ A single-tenant web application that allows influencers to let their fans genera
    python main.py
    ```
    
-   Or with uvicorn:
+   With verbose logging:
    ```bash
-   uvicorn main:app --reload
+   python main.py --verbose
+   ```
+   
+   All CLI options:
+   ```bash
+   python main.py --help
+   # Options:
+   #   -v, --verbose   Enable verbose logging
+   #   --host HOST     Host to bind to (default: 0.0.0.0)
+   #   --port PORT     Port to bind to (default: 8000)
+   #   --reload        Enable auto-reload for development
    ```
 
 4. **Access the app**:
