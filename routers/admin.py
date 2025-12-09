@@ -427,9 +427,10 @@ async def delete_example_input(
 async def generate_example(
     request: Request,
     filename: str,
+    preset_id: int = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
-    """Generate an example selfie from an example input."""
+    """Generate an example selfie from an example input for a specific preset."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
@@ -441,18 +442,13 @@ async def generate_example(
     if not example_path.exists():
         raise HTTPException(status_code=404, detail="Example input not found")
     
-    # Get primary influencer image
-    result = await db.execute(
-        select(InfluencerImage).where(InfluencerImage.is_primary == True)
-    )
-    influencer = result.scalar_one_or_none()
-    
+    # Get preset and influencer image
+    preset = await db.get(Preset, preset_id)
+    if not preset or not preset.is_active:
+        raise HTTPException(status_code=400, detail="Invalid or inactive preset")
+    influencer = await db.get(InfluencerImage, preset.influencer_image_id)
     if not influencer:
-        result = await db.execute(select(InfluencerImage).limit(1))
-        influencer = result.scalar_one_or_none()
-    
-    if not influencer:
-        raise HTTPException(status_code=400, detail="No influencer images configured")
+        raise HTTPException(status_code=400, detail="Preset's influencer image not found")
     
     # Upload example input image to ComfyUI
     await upload_image_to_comfyui(example_path)
@@ -460,7 +456,10 @@ async def generate_example(
     # Start generation
     prompt_id = await generate_selfie(
         fan_image_url=str(example_path),
-        influencer_images=[influencer.filename]
+        influencer_images=[influencer.filename],
+        width=preset.width,
+        height=preset.height,
+        prompt=preset.prompt
     )
     
     # Poll for completion and download result
@@ -470,9 +469,9 @@ async def generate_example(
         if status_result.get("completed"):
             image_url = status_result.get("image_url")
             if image_url:
-                # Download and save
-                generated_dir = app_settings.upload_dir / "generated"
-                generated_dir.mkdir(exist_ok=True)
+                # Download and save under preset-specific folder
+                generated_dir = app_settings.upload_dir / "generated" / str(preset_id)
+                generated_dir.mkdir(exist_ok=True, parents=True)
                 output_filename = f"{example_path.stem}_{uuid.uuid4().hex[:8]}.png"
                 save_path = generated_dir / output_filename
                 await download_output_image(image_url, save_path)
@@ -484,9 +483,10 @@ async def generate_example(
 @router.post("/generate-all-examples")
 async def generate_all_examples(
     request: Request,
+    preset_id: int = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
-    """Generate example selfies for all example inputs."""
+    """Generate example selfies for all example inputs for a specific preset."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
@@ -496,18 +496,13 @@ async def generate_all_examples(
     # Get all example inputs from disk
     example_inputs = get_example_inputs_from_disk()
     
-    # Get primary influencer image
-    result = await db.execute(
-        select(InfluencerImage).where(InfluencerImage.is_primary == True)
-    )
-    influencer = result.scalar_one_or_none()
-    
+    # Get preset and influencer image
+    preset = await db.get(Preset, preset_id)
+    if not preset or not preset.is_active:
+        raise HTTPException(status_code=400, detail="Invalid or inactive preset")
+    influencer = await db.get(InfluencerImage, preset.influencer_image_id)
     if not influencer:
-        result = await db.execute(select(InfluencerImage).limit(1))
-        influencer = result.scalar_one_or_none()
-    
-    if not influencer:
-        raise HTTPException(status_code=400, detail="No influencer images configured")
+        raise HTTPException(status_code=400, detail="Preset's influencer image not found")
     
     # Track all prompt IDs
     generations = []
@@ -519,15 +514,18 @@ async def generate_all_examples(
         try:
             prompt_id = await generate_selfie(
                 fan_image_url=str(example_path),
-                influencer_images=[influencer.filename]
+                influencer_images=[influencer.filename],
+                width=preset.width,
+                height=preset.height,
+                prompt=preset.prompt
             )
             generations.append({"prompt_id": prompt_id, "name": example["name"]})
         except Exception as e:
             print(f"[ERROR] Failed to generate for {example['name']}: {e}")
     
     # Poll for completions and download results
-    generated_dir = app_settings.upload_dir / "generated"
-    generated_dir.mkdir(exist_ok=True)
+    generated_dir = app_settings.upload_dir / "generated" / str(preset_id)
+    generated_dir.mkdir(exist_ok=True, parents=True)
     
     for gen in generations:
         for _ in range(120):  # Wait up to 2 minutes per image

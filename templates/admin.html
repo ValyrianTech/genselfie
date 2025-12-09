@@ -165,6 +165,10 @@
                         <form method="POST" action="/admin/delete-preset/{{ preset.id }}" style="display: inline;">
                             <button type="submit" class="btn btn-danger btn-small">Delete</button>
                         </form>
+                        <form method="POST" action="/admin/generate-all-examples" style="display: inline;">
+                            <input type="hidden" name="preset_id" value="{{ preset.id }}">
+                            <button type="submit" class="btn btn-primary btn-small">Generate All Examples</button>
+                        </form>
                     </div>
                 </div>
                 {% endfor %}
@@ -223,6 +227,11 @@
                     </div>
                     <div class="button-group">
                         <form method="POST" action="/admin/generate-example/{{ example.filename }}" style="display: inline;">
+                            <select name="preset_id" required>
+                                {% for p in presets %}
+                                <option value="{{ p.id }}">{{ p.name }}</option>
+                                {% endfor %}
+                            </select>
                             <button type="submit" class="btn btn-primary btn-small">Generate</button>
                         </form>
                         <form method="POST" action="/admin/delete-example-input/{{ example.filename }}" style="display: inline;">
@@ -238,9 +247,15 @@
                 <button type="submit" class="btn btn-primary">Add Example Input</button>
             </form>
             
-            {% if example_inputs %}
+            {% if example_inputs and presets %}
             <div class="button-group" style="margin-top: 16px;">
                 <form method="POST" action="/admin/generate-all-examples">
+                    <label for="all-preset">Preset</label>
+                    <select id="all-preset" name="preset_id" required>
+                        {% for p in presets %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
                     <button type="submit" class="btn btn-secondary">Generate All Examples</button>
                 </form>
             </div>
