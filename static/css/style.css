@@ -167,6 +167,45 @@ body {
     object-fit: contain;
 }
 
+/* Lightbox */
+.lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+}
+
+.lightbox img {
+    max-width: 95vw;
+    max-height: 95vh;
+    display: block;
+    border-radius: 8px;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.9);
+    color: #111;
+    font-size: 24px;
+    line-height: 36px;
+    cursor: pointer;
+}
+
 .celebrity-name {
     position: absolute;
     bottom: 0;

@@ -81,6 +81,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const stepResult = document.getElementById('step-result');
     const loading = document.getElementById('loading');
     const result = document.getElementById('result');
+    const examplesGallery = document.getElementById('examples-gallery');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxClose = document.querySelector('.lightbox-close');
     const resultImg = document.getElementById('result-img');
     const downloadBtn = document.getElementById('download-btn');
     const newSelfieBtn = document.getElementById('new-selfie');
