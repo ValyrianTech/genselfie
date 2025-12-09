@@ -249,6 +249,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Lightbox
+    function openLightbox(src) {
+        if (!lightbox || !lightboxImg) return;
+        lightboxImg.src = src;
+        lightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        if (!lightbox) return;
+        lightbox.style.display = 'none';
+        document.body.style.overflow = '';
+        if (lightboxImg) lightboxImg.src = '';
+    }
+
+    if (examplesGallery) {
+        examplesGallery.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'IMG') {
+                openLightbox(target.src);
+            }
+        });
+    }
+    if (lightboxClose) {
+        lightboxClose.addEventListener('click', closeLightbox);
+    }
+    if (lightbox) {
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+
     // Validate promo code
     if (validateCodeBtn) {
         validateCodeBtn.addEventListener('click', async () => {
