@@ -455,6 +455,13 @@ def set_dimensions(workflow: dict, width: int, height: int) -> dict:
                 inputs["width"] = width
             if "height" in inputs:
                 inputs["height"] = height
+        # Workflows that scale input image by total megapixels
+        if class_type == "ImageScaleToTotalPixels":
+            try:
+                mp = max(0.1, min(16.0, round((width * height) / 1_000_000.0, 3)))
+                inputs["megapixels"] = mp
+            except Exception:
+                pass
     
     return workflow
 

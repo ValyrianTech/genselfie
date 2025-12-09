@@ -36,18 +36,45 @@ def get_example_inputs_from_disk() -> list[dict]:
     return inputs
 
 
-def get_generated_examples_from_disk() -> list[dict]:
-    """Get generated example images from the generated directory."""
+def get_generated_examples_from_disk(preset_id: Optional[int] = None) -> list[dict]:
+    """Get generated example images.
+    If preset_id is provided, read from generated/<preset_id>/, else include root generated/ and all preset subfolders.
+    Returns entries with relpath (relative to uploads root) for deletion routing.
+    """
     generated_dir = app_settings.upload_dir / "generated"
-    examples = []
+    examples: list[dict] = []
     
-    if generated_dir.exists():
-        for img_path in sorted(generated_dir.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True):
+    if not generated_dir.exists():
+        return examples
+    
+    def add_from_dir(dir_path: Path, pid: Optional[int]):
+        for img_path in sorted(dir_path.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True):
+            rel_from_uploads = img_path.relative_to(app_settings.upload_dir)
             examples.append({
+                "relpath": rel_from_uploads.as_posix(),
                 "filename": img_path.name,
                 "name": img_path.stem,
-                "url": f"/static/uploads/generated/{img_path.name}"
+                "preset_id": pid,
+                "url": f"/static/uploads/{rel_from_uploads.as_posix()}"
             })
+    
+    if preset_id is not None:
+        preset_dir = generated_dir / str(preset_id)
+        if preset_dir.exists():
+            add_from_dir(preset_dir, preset_id)
+        else:
+            # if no specific folder, fall back to root
+            add_from_dir(generated_dir, None)
+    else:
+        # Include root images
+        add_from_dir(generated_dir, None)
+        # Include subfolder images by preset id
+        for sub in sorted([p for p in generated_dir.iterdir() if p.is_dir()]):
+            try:
+                pid = int(sub.name)
+            except ValueError:
+                continue
+            add_from_dir(sub, pid)
     
     return examples
 
@@ -88,12 +115,20 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
     # Get example inputs from disk
     example_inputs = get_example_inputs_from_disk()
     
-    # Get generated examples from disk
-    generated_examples = get_generated_examples_from_disk()
+    # Filter generated examples by optional preset_id query param
+    selected_preset_id: Optional[int] = None
+    q_pid = request.query_params.get("preset_id")
+    if q_pid:
+        try:
+            selected_preset_id = int(q_pid)
+        except ValueError:
+            selected_preset_id = None
+    generated_examples = get_generated_examples_from_disk(selected_preset_id)
     
     # Get presets
     result = await db.execute(select(Preset).order_by(Preset.sort_order, Preset.created_at))
     presets = result.scalars().all()
+    preset_names = {p.id: p.name for p in presets}
     
     return templates.TemplateResponse("admin.html", {
         "request": request,
@@ -103,7 +138,9 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "generations": generations,
         "example_inputs": example_inputs,
         "generated_examples": generated_examples,
+        "selected_preset_id": selected_preset_id,
         "presets": presets,
+        "preset_names": preset_names,
         "comfyui_url": app_settings.comfyui_url,
     })
 

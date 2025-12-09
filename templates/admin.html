@@ -262,24 +262,44 @@
             {% endif %}
             
             <!-- Generated Examples -->
-            {% if generated_examples %}
             <div style="margin-top: 20px;">
                 <h3>Generated Examples</h3>
-                <p class="help-text">Images in <code>static/uploads/generated/</code></p>
+                <p class="help-text">Images in <code>static/uploads/generated/</code>. Filter by preset to browse examples for a style.</p>
+                {% if presets %}
+                <form method="GET" action="/admin" class="inline-form" style="margin-bottom: 12px;">
+                    <label for="filter-preset">Filter by preset</label>
+                    <select id="filter-preset" name="preset_id">
+                        <option value="">All</option>
+                        {% for p in presets %}
+                        <option value="{{ p.id }}" {% if selected_preset_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-secondary btn-small">Apply</button>
+                </form>
+                {% endif %}
+                {% if generated_examples %}
                 <div class="image-grid">
                     {% for example in generated_examples %}
                     <div class="image-card">
                         <img src="{{ example.url }}" alt="{{ example.name }}">
+                        <div class="image-info">
+                            <span>{{ example.name }}</span>
+                            {% if example.preset_id %}
+                                <span class="badge">{{ preset_names.get(example.preset_id, ('Preset ' ~ example.preset_id)) }}</span>
+                            {% endif %}
+                        </div>
                         <div class="button-group">
-                            <form method="POST" action="/admin/delete-generated/{{ example.filename }}" style="display: inline;">
+                            <form method="POST" action="/admin/delete-generated/{{ example.relpath }}" style="display: inline;">
                                 <button type="submit" class="btn btn-danger btn-small">Delete</button>
                             </form>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
+                {% else %}
+                <p class="help-text">No generated examples found for the selected filter.</p>
+                {% endif %}
             </div>
-            {% endif %}
         </section>
 
         <!-- Promo Codes Section -->
