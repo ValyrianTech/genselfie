@@ -10,7 +10,7 @@ from config import settings as app_settings
 from database import get_db, Settings, InfluencerImage, Generation, PromoCode
 from services.social import fetch_profile_image
 from services.codes import validate_and_consume_code
-from services.comfyui import generate_selfie, get_generation_status
+from services.comfyui import generate_selfie, get_generation_status, get_queue_status
 from services.payments import create_stripe_payment, create_lightning_invoice, check_payment_status
 
 router = APIRouter(tags=["public"])
@@ -45,6 +45,40 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
         "request": request,
         "settings": settings,
         "examples": examples,
+    })
+
+
+@router.get("/api/server-status")
+async def server_status():
+    """Check ComfyUI server status and queue size."""
+    import httpx
+    
+    # Directly check if ComfyUI is reachable
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{app_settings.comfyui_url}/queue",
+                timeout=5.0
+            )
+            if response.status_code == 200:
+                queue = response.json()
+                pending = len(queue.get("queue_pending", []))
+                running = len(queue.get("queue_running", []))
+                
+                return JSONResponse({
+                    "online": True,
+                    "queue_pending": pending,
+                    "queue_running": running,
+                    "queue_total": pending + running
+                })
+    except Exception:
+        pass
+    
+    return JSONResponse({
+        "online": False,
+        "queue_pending": 0,
+        "queue_running": 0,
+        "queue_total": 0
     })
 
 

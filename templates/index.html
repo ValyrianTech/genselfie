@@ -20,6 +20,13 @@
         </div>
     </header>
 
+    <!-- Server Status -->
+    <div class="server-status" id="server-status">
+        <span class="status-indicator" id="status-indicator"></span>
+        <span class="status-text" id="status-text">Checking server...</span>
+        <span class="queue-info" id="queue-info"></span>
+    </div>
+
     <!-- Examples Gallery -->
     {% if examples %}
     <section class="examples">
@@ -34,8 +41,17 @@
     </section>
     {% endif %}
 
-    <!-- Generation Form -->
-    <section class="generate-section">
+    <!-- Offline Message (shown by default until status is checked) -->
+    <section class="offline-message" id="offline-message">
+        <div class="offline-content">
+            <h2>Server Offline</h2>
+            <p>The image generation server is currently unavailable. Please try again later.</p>
+            <p class="help-text">This page will automatically check for server availability.</p>
+        </div>
+    </section>
+
+    <!-- Generation Form (hidden by default until server is confirmed online) -->
+    <section class="generate-section" id="generate-section" style="display: none;">
         <h2>Get Your Selfie</h2>
         
         <!-- Step 1: Profile Image -->

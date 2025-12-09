@@ -1,6 +1,53 @@
 // GenSelfie Frontend Application
 
+// Check server status
+async function checkServerStatus() {
+    const indicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    const queueInfo = document.getElementById('queue-info');
+    const generateSection = document.getElementById('generate-section');
+    const offlineMessage = document.getElementById('offline-message');
+    
+    if (!indicator || !statusText) return;
+    
+    try {
+        const response = await fetch('/api/server-status');
+        const data = await response.json();
+        
+        if (data.online) {
+            indicator.className = 'status-indicator online';
+            statusText.textContent = 'Server Online';
+            if (data.queue_total > 0) {
+                queueInfo.textContent = `Queue: ${data.queue_total} job${data.queue_total > 1 ? 's' : ''}`;
+            } else {
+                queueInfo.textContent = 'Queue: Empty';
+            }
+            // Show form, hide offline message
+            if (generateSection) generateSection.style.display = 'block';
+            if (offlineMessage) offlineMessage.style.display = 'none';
+        } else {
+            indicator.className = 'status-indicator offline';
+            statusText.textContent = 'Server Offline';
+            queueInfo.textContent = '';
+            // Hide form, show offline message
+            if (generateSection) generateSection.style.display = 'none';
+            if (offlineMessage) offlineMessage.style.display = 'block';
+        }
+    } catch (error) {
+        indicator.className = 'status-indicator offline';
+        statusText.textContent = 'Server Unavailable';
+        queueInfo.textContent = '';
+        // Hide form, show offline message
+        if (generateSection) generateSection.style.display = 'none';
+        if (offlineMessage) offlineMessage.style.display = 'block';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Check status on load and periodically
+    checkServerStatus();
+    setInterval(checkServerStatus, 10000); // Every 10 seconds
+
     // State
     let state = {
         platform: 'twitter',

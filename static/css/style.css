@@ -73,6 +73,71 @@ body {
     margin-top: 8px;
 }
 
+/* Server Status */
+.server-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: 0.9rem;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.online {
+    background: var(--success-color);
+}
+
+.status-indicator.offline {
+    background: var(--error-color);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    color: var(--text-muted);
+}
+
+.queue-info {
+    color: var(--text-muted);
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+}
+
+/* Offline Message */
+.offline-message {
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--error-color);
+    margin-bottom: 24px;
+}
+
+.offline-content h2 {
+    color: var(--error-color);
+    margin-bottom: 16px;
+}
+
+.offline-content p {
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
 /* Examples Gallery */
 .examples {
     margin-bottom: 40px;
