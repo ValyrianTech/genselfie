@@ -133,27 +133,33 @@ GenSelfie/
 ├── static/                 # CSS, JS, uploads
 ├── workflows/              # ComfyUI workflow JSON files
 ├── input_examples/         # Example input images
-├── serverless/             # RunPod serverless worker
 └── genselfie.db           # SQLite database (created on first run)
 ```
 
-## Serverless Deployment
+## Docker Deployment
 
-For a serverless deployment that scales to zero when not in use, see the [serverless worker documentation](serverless/README.md).
+Build and run with Docker:
 
-Build and deploy:
 ```bash
-# Set your Docker username
-export DOCKER_USERNAME=yourusername
+# Build the image
+docker build -t genselfie .
 
-# Build the worker image
-./serverless/build.sh
-
-# Push to Docker Hub
-docker push $DOCKER_USERNAME/genselfie-worker:latest
+# Run with environment variables and persistent storage
+docker run -p 8000:8000 \
+  -e ADMIN_PASSWORD=your_password \
+  -e COMFYUI_URL=http://your-comfyui-server:8188 \
+  -v ./data:/app/data \
+  -v ./uploads:/app/static/uploads \
+  -e DATA_DIR=/app/data \
+  -e UPLOAD_DIR=/app/static/uploads \
+  genselfie
 ```
 
-Then create a serverless endpoint on [RunPod Serverless](https://www.runpod.io/console/serverless).
+For RunPod CPU pods, mount the network volume at `/workspace` and set:
+```bash
+DATA_DIR=/workspace/data
+UPLOAD_DIR=/workspace/uploads
+```
 
 ## Supported Social Platforms
 
