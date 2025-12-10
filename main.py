@@ -28,6 +28,9 @@ app = FastAPI(
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Mount uploads directory (may be different from static/uploads when DATA_DIR is set)
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+
 # Include routers
 app.include_router(public.router)
 app.include_router(admin.router, prefix="/admin")

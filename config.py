@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     
     # Paths
     base_dir: Path = Path(__file__).parent
-    data_dir: Path = Path(os.environ.get("DATA_DIR", Path(__file__).parent))
+    data_dir: Path = Path(os.environ.get("DATA_DIR", "/workspace"))
     
     @property
     def upload_dir(self) -> Path:

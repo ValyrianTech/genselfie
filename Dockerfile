@@ -33,8 +33,8 @@ COPY templates/ ./templates/
 COPY static/ ./static/
 COPY workflows/ ./workflows/
 
-# Create uploads directory
-RUN mkdir -p /app/static/uploads
+# Create default data directory (default: /workspace for RunPod compatibility)
+RUN mkdir -p /workspace/uploads
 
 # Expose port
 EXPOSE 8000

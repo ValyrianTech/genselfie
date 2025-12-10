@@ -76,7 +76,7 @@
             <div class="upload-group">
                 <h3>Banner Image</h3>
                 {% if settings.banner_image %}
-                <img src="/static/uploads/{{ settings.banner_image }}" alt="Current banner" class="preview-small">
+                <img src="/uploads/{{ settings.banner_image }}" alt="Current banner" class="preview-small">
                 {% endif %}
                 <form method="POST" action="/admin/upload-banner" enctype="multipart/form-data">
                     <input type="file" name="file" accept="image/*" required>
@@ -87,7 +87,7 @@
             <div class="upload-group">
                 <h3>Logo</h3>
                 {% if settings.logo_image %}
-                <img src="/static/uploads/{{ settings.logo_image }}" alt="Current logo" class="preview-small logo-preview">
+                <img src="/uploads/{{ settings.logo_image }}" alt="Current logo" class="preview-small logo-preview">
                 {% endif %}
                 <form method="POST" action="/admin/upload-logo" enctype="multipart/form-data">
                     <input type="file" name="file" accept="image/*" required>
@@ -103,7 +103,7 @@
             <div class="image-grid">
                 {% for image in images %}
                 <div class="image-card">
-                    <img src="/static/uploads/{{ image.filename }}" alt="{{ image.original_name }}">
+                    <img src="/uploads/{{ image.filename }}" alt="{{ image.original_name }}">
                     <div class="image-info">
                         <span>{{ image.original_name }}</span>
                     </div>

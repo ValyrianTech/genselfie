@@ -30,7 +30,7 @@ def get_example_inputs_from_disk() -> list[dict]:
             inputs.append({
                 "filename": img_path.name,
                 "name": img_path.stem,
-                "url": f"/static/uploads/examples/{img_path.name}"
+                "url": f"/uploads/examples/{img_path.name}"
             })
     
     return inputs
@@ -63,7 +63,7 @@ def get_generated_examples_from_disk(preset_name: Optional[str] = None) -> list[
                 "filename": img_path.name,
                 "name": img_path.stem,
                 "preset_name": folder_name,
-                "url": f"/static/uploads/{rel_from_uploads.as_posix()}"
+                "url": f"/uploads/{rel_from_uploads.as_posix()}"
             })
     
     if preset_name is not None:

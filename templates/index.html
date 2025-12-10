@@ -9,11 +9,11 @@
     <!-- Header -->
     <header class="header">
         {% if settings.banner_image %}
-        <div class="banner" style="background-image: url('/static/uploads/{{ settings.banner_image }}')"></div>
+        <div class="banner" style="background-image: url('/uploads/{{ settings.banner_image }}')"></div>
         {% endif %}
         <div class="header-content">
             {% if settings.logo_image %}
-            <img src="/static/uploads/{{ settings.logo_image }}" alt="{{ settings.app_name }}" class="logo">
+            <img src="/uploads/{{ settings.logo_image }}" alt="{{ settings.app_name }}" class="logo">
             {% endif %}
             <h1>{{ settings.app_name }}</h1>
             <p class="tagline">{{ settings.tagline }}</p>

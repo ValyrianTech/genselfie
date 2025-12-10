@@ -43,7 +43,7 @@ def get_example_images_from_disk(preset_name: Optional[str] = None) -> list[dict
             # Build URL reflecting preset subfolder if present
             rel_path = img_path.relative_to(app_settings.upload_dir)
             examples.append({
-                "url": f"/static/uploads/{rel_path.as_posix()}",
+                "url": f"/uploads/{rel_path.as_posix()}",
                 "name": img_path.stem
             })
     
@@ -273,7 +273,7 @@ async def generate(
         content = await uploaded_image.read()
         with open(filepath, "wb") as f:
             f.write(content)
-        fan_image_url = f"/static/uploads/{filename}"
+        fan_image_url = f"/uploads/{filename}"
         fan_image_path = str(filepath)
     elif platform and handle:
         fan_image_url = await fetch_profile_image(platform, handle)
@@ -359,7 +359,7 @@ async def download_and_save_result(generation_id: int, comfyui_url: str) -> str:
         with open(save_path, "wb") as f:
             f.write(response.content)
     
-    return f"/static/uploads/results/{filename}"
+    return f"/uploads/results/{filename}"
 
 
 @router.get("/api/generation-status/{generation_id}")
