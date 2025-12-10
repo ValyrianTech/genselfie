@@ -179,7 +179,6 @@ async def update_settings(
     tagline: str = Form(""),
     primary_color: str = Form("#6366f1"),
     secondary_color: str = Form("#8b5cf6"),
-    price_cents: int = Form(500),
     currency: str = Form("USD"),
     stripe_enabled: bool = Form(False),
     lightning_enabled: bool = Form(False),
@@ -196,7 +195,6 @@ async def update_settings(
     settings.tagline = tagline
     settings.primary_color = primary_color
     settings.secondary_color = secondary_color
-    settings.price_cents = price_cents
     settings.currency = currency
     settings.stripe_enabled = stripe_enabled
     settings.lightning_enabled = lightning_enabled

@@ -23,8 +23,7 @@ class Settings(Base):
     primary_color: Mapped[str] = mapped_column(String(7), default="#6366f1")
     secondary_color: Mapped[str] = mapped_column(String(7), default="#8b5cf6")
     
-    # Pricing
-    price_cents: Mapped[int] = mapped_column(Integer, default=500)  # $5.00
+    # Currency (pricing is per-preset)
     currency: Mapped[str] = mapped_column(String(3), default="USD")
     
     # Payment toggles

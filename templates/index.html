@@ -142,7 +142,7 @@
             <h3>Step {{ "3" if presets else "2" }}: Payment</h3>
             
             <div class="price-display">
-                <span class="price" id="price-display">{{ "%.2f"|format(presets[0].price_cents / 100 if presets else settings.price_cents / 100) }} {{ settings.currency }}</span>
+                <span class="price" id="price-display">{{ "%.2f"|format(presets[0].price_cents / 100 if presets else 0) }} {{ settings.currency }}</span>
             </div>
             
             <div class="payment-options">

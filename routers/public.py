@@ -159,21 +159,32 @@ async def fetch_profile(
 @router.post("/api/create-payment")
 async def create_payment(
     payment_type: str = Form(...),  # stripe or lightning
+    preset_id: Optional[int] = Form(None),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a payment intent or lightning invoice."""
     settings = await db.get(Settings, 1)
     
+    # Get price from preset
+    if not preset_id:
+        raise HTTPException(status_code=400, detail="Preset ID required")
+    
+    preset = await db.get(Preset, preset_id)
+    if not preset or not preset.is_active:
+        raise HTTPException(status_code=400, detail="Invalid or inactive preset")
+    
+    price_cents = preset.price_cents
+    
     if payment_type == "stripe":
         if not settings.stripe_enabled:
             raise HTTPException(status_code=400, detail="Stripe payments not enabled")
-        result = await create_stripe_payment(settings.price_cents, settings.currency)
+        result = await create_stripe_payment(price_cents, settings.currency)
         return JSONResponse(result)
     
     elif payment_type == "lightning":
         if not settings.lightning_enabled:
             raise HTTPException(status_code=400, detail="Lightning payments not enabled")
-        result = await create_lightning_invoice(settings.price_cents, settings.currency)
+        result = await create_lightning_invoice(price_cents, settings.currency)
         return JSONResponse(result)
     
     raise HTTPException(status_code=400, detail="Invalid payment type")

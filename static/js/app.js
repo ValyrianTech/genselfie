@@ -369,9 +369,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Stripe payment
     if (payStripeBtn) {
         payStripeBtn.addEventListener('click', async () => {
+            if (!state.presetId) {
+                alert('Please select a style first');
+                return;
+            }
             try {
                 const formData = new FormData();
                 formData.append('payment_type', 'stripe');
+                formData.append('preset_id', state.presetId);
                 
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
@@ -409,9 +414,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Lightning payment
     if (payLightningBtn) {
         payLightningBtn.addEventListener('click', async () => {
+            if (!state.presetId) {
+                alert('Please select a style first');
+                return;
+            }
             try {
                 const formData = new FormData();
                 formData.append('payment_type', 'lightning');
+                formData.append('preset_id', state.presetId);
                 
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
