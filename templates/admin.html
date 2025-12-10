@@ -6,16 +6,9 @@
 <div class="admin-container">
     <header class="admin-header">
         <h1>{{ settings.app_name }} Admin</h1>
-        <div class="header-right">
-            <div class="server-status" id="server-status">
-                <span class="status-indicator" id="status-indicator"></span>
-                <span class="status-text" id="status-text">Checking ComfyUI...</span>
-                <span class="queue-info" id="queue-info"></span>
-            </div>
-            <form method="POST" action="/admin/logout" style="display: inline;">
-                <button type="submit" class="btn btn-secondary">Logout</button>
-            </form>
-        </div>
+        <form method="POST" action="/admin/logout" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Logout</button>
+        </form>
     </header>
 
     <div class="admin-grid">
@@ -369,6 +362,12 @@
         <!-- ComfyUI Section -->
         <section class="admin-section">
             <h2>ComfyUI Settings</h2>
+            
+            <div class="server-status" id="server-status">
+                <span class="status-indicator" id="status-indicator"></span>
+                <span class="status-text" id="status-text">Checking server...</span>
+                <span class="queue-info" id="queue-info"></span>
+            </div>
             
             <form method="POST" action="/admin/comfyui-url">
                 <div class="form-group">
