@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
         paymentId: null,
         promoCode: null,
         generationId: null,
-        presetId: null
+        presetId: null,
+        customPrompt: null
     };
 
     // Elements
@@ -195,6 +196,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Preset selection
     const presetOptions = document.querySelectorAll('.preset-option');
+    const priceDisplay = document.getElementById('price-display');
+    const stepPrompt = document.getElementById('step-prompt');
+    const customPromptInput = document.getElementById('custom-prompt');
+    
+    function updatePresetUI(option) {
+        // Update price display
+        const priceCents = parseInt(option.dataset.price) || 0;
+        if (priceDisplay) {
+            priceDisplay.textContent = (priceCents / 100).toFixed(2) + ' ' + (priceDisplay.textContent.split(' ').pop() || 'USD');
+        }
+        
+        // Update prompt editing visibility
+        const allowPrompt = option.dataset.allowPrompt === 'true';
+        const defaultPrompt = option.dataset.prompt || '';
+        
+        if (stepPrompt) {
+            if (allowPrompt) {
+                stepPrompt.style.display = 'block';
+                if (customPromptInput) {
+                    customPromptInput.value = defaultPrompt;
+                    state.customPrompt = defaultPrompt;
+                }
+            } else {
+                stepPrompt.style.display = 'none';
+                state.customPrompt = null;
+            }
+        }
+    }
+    
     if (presetOptions.length > 0) {
         // Set initial preset from first checked radio
         const checkedPreset = document.querySelector('.preset-option input[type="radio"]:checked');
@@ -202,6 +232,11 @@ document.addEventListener('DOMContentLoaded', function() {
             state.presetId = checkedPreset.value;
             // Load examples for initial preset
             refreshExamples(state.presetId);
+            // Update UI for initial preset
+            const initialOption = checkedPreset.closest('.preset-option');
+            if (initialOption) {
+                updatePresetUI(initialOption);
+            }
         }
         
         presetOptions.forEach(option => {
@@ -216,8 +251,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     radio.checked = true;
                     state.presetId = radio.value;
                     refreshExamples(state.presetId);
+                    updatePresetUI(option);
                 }
             });
+        });
+    }
+    
+    // Track custom prompt changes
+    if (customPromptInput) {
+        customPromptInput.addEventListener('input', () => {
+            state.customPrompt = customPromptInput.value;
         });
     }
 
@@ -481,6 +524,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (state.presetId) {
                     formData.append('preset_id', state.presetId);
+                }
+                if (state.customPrompt) {
+                    formData.append('custom_prompt', state.customPrompt);
                 }
                 
                 const response = await fetch('/api/generate', {

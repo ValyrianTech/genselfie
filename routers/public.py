@@ -195,6 +195,7 @@ async def generate(
     platform: Optional[str] = Form(None),
     handle: Optional[str] = Form(None),
     preset_id: Optional[int] = Form(None),
+    custom_prompt: Optional[str] = Form(None),
     uploaded_image: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db)
 ):
@@ -289,6 +290,15 @@ async def generate(
     await db.commit()
     await db.refresh(generation)
     
+    # Determine which prompt to use
+    # Use custom_prompt only if preset allows prompt editing
+    final_prompt = None
+    if preset:
+        if preset.allow_prompt_edit and custom_prompt:
+            final_prompt = custom_prompt
+        else:
+            final_prompt = preset.prompt
+    
     # Start generation with preset settings if available
     try:
         prompt_id = await generate_selfie(
@@ -296,7 +306,7 @@ async def generate(
             influencer_images=[img.filename for img in influencer_images],
             width=preset.width if preset else None,
             height=preset.height if preset else None,
-            prompt=preset.prompt if preset else None
+            prompt=final_prompt
         )
         generation.prompt_id = prompt_id
         generation.status = "processing"

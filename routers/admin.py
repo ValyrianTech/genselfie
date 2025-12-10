@@ -606,6 +606,8 @@ async def create_preset(
     width: int = Form(1024),
     height: int = Form(1024),
     prompt: str = Form(""),
+    price_cents: int = Form(500),
+    allow_prompt_edit: bool = Form(False),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new preset."""
@@ -624,6 +626,8 @@ async def create_preset(
         width=width,
         height=height,
         prompt=prompt if prompt else None,
+        price_cents=price_cents,
+        allow_prompt_edit=allow_prompt_edit,
         sort_order=sort_order
     )
     db.add(preset)
@@ -642,6 +646,8 @@ async def update_preset(
     width: int = Form(1024),
     height: int = Form(1024),
     prompt: str = Form(""),
+    price_cents: int = Form(500),
+    allow_prompt_edit: bool = Form(False),
     is_active: bool = Form(False),
     db: AsyncSession = Depends(get_db)
 ):
@@ -659,6 +665,8 @@ async def update_preset(
     preset.width = width
     preset.height = height
     preset.prompt = prompt if prompt else None
+    preset.price_cents = price_cents
+    preset.allow_prompt_edit = allow_prompt_edit
     preset.is_active = is_active
     
     await db.commit()

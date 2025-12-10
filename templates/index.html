@@ -33,17 +33,31 @@
         <h3>Step 1: Choose Style</h3>
         <div class="preset-options">
             {% for preset in presets %}
-            <label class="preset-option {% if loop.first %}selected{% endif %}">
+            <label class="preset-option {% if loop.first %}selected{% endif %}"
+                   data-price="{{ preset.price_cents }}"
+                   data-allow-prompt="{{ 'true' if preset.allow_prompt_edit else 'false' }}"
+                   data-prompt="{{ preset.prompt or '' }}">
                 <input type="radio" name="preset_id" value="{{ preset.id }}" {% if loop.first %}checked{% endif %}>
                 <div class="preset-option-content">
                     <span class="preset-name">{{ preset.name }}</span>
                     {% if preset.description %}
                     <span class="preset-desc">{{ preset.description }}</span>
                     {% endif %}
+                    <span class="preset-price">{{ "%.2f"|format(preset.price_cents / 100) }} {{ settings.currency }}</span>
                     <span class="preset-size">{{ preset.width }}x{{ preset.height }}</span>
                 </div>
             </label>
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- Prompt Editing (shown only if preset allows it) -->
+    <div class="step" id="step-prompt" style="display: none;">
+        <h3>Customize Prompt (Optional)</h3>
+        <div class="form-group">
+            <label for="custom-prompt">Generation Prompt</label>
+            <textarea id="custom-prompt" name="custom_prompt" rows="3" placeholder="Describe how you want the selfie to look..."></textarea>
+            <small class="help-text">You can modify the prompt to customize your selfie generation.</small>
         </div>
     </div>
     {% endif %}
@@ -128,7 +142,7 @@
             <h3>Step {{ "3" if presets else "2" }}: Payment</h3>
             
             <div class="price-display">
-                <span class="price">{{ "%.2f"|format(settings.price_cents / 100) }} {{ settings.currency }}</span>
+                <span class="price" id="price-display">{{ "%.2f"|format(presets[0].price_cents / 100 if presets else settings.price_cents / 100) }} {{ settings.currency }}</span>
             </div>
             
             <div class="payment-options">

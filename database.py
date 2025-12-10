@@ -92,6 +92,8 @@ class Preset(Base):
     width: Mapped[int] = mapped_column(Integer, default=1024)
     height: Mapped[int] = mapped_column(Integer, default=1024)
     prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Custom prompt for this preset
+    price_cents: Mapped[int] = mapped_column(Integer, default=500)  # Price in cents for this preset
+    allow_prompt_edit: Mapped[bool] = mapped_column(Boolean, default=False)  # Allow fan to edit prompt
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
