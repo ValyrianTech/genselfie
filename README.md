@@ -103,16 +103,9 @@ Deploy on RunPod:
 | `LNBITS_API_KEY` | LNbits API key | For Lightning payments |
 | `DEBUG` | Enable debug mode | No (default: false) |
 | `VERBOSE` | Enable verbose logging | No (default: false) |
-| `DATA_DIR` | Directory for database and data files | No (default: app directory) |
-| `UPLOAD_DIR` | Directory for uploaded files | No (default: static/uploads) |
-| `DATABASE_URL` | SQLite database URL | No (default: DATA_DIR/genselfie.db) |
+| `DATA_DIR` | Directory for database and uploads | No (default: app directory) |
 
-For RunPod serverless with network volumes, set:
-```bash
-DATA_DIR=/workspace/data
-UPLOAD_DIR=/workspace/uploads
-DATABASE_URL=sqlite+aiosqlite:////workspace/data/genselfie.db
-```
+For RunPod with network volumes, set `DATA_DIR=/workspace`. The database will be stored at `DATA_DIR/genselfie.db` and uploads at `DATA_DIR/uploads/`.
 
 ## Project Structure
 
@@ -148,18 +141,12 @@ docker build -t genselfie .
 docker run -p 8000:8000 \
   -e ADMIN_PASSWORD=your_password \
   -e COMFYUI_URL=http://your-comfyui-server:8188 \
-  -v ./data:/app/data \
-  -v ./uploads:/app/static/uploads \
   -e DATA_DIR=/app/data \
-  -e UPLOAD_DIR=/app/static/uploads \
+  -v ./data:/app/data \
   genselfie
 ```
 
-For RunPod CPU pods, mount the network volume at `/workspace` and set:
-```bash
-DATA_DIR=/workspace/data
-UPLOAD_DIR=/workspace/uploads
-```
+For RunPod CPU pods, set `DATA_DIR=/workspace` to use the network volume.
 
 ## Supported Social Platforms
 

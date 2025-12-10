@@ -47,11 +47,14 @@ class Settings(BaseSettings):
     # Paths
     base_dir: Path = Path(__file__).parent
     data_dir: Path = Path(os.environ.get("DATA_DIR", Path(__file__).parent))
-    upload_dir: Path = Path(os.environ.get("UPLOAD_DIR", Path(__file__).parent / "static" / "uploads"))
-    database_url: str = os.environ.get(
-        "DATABASE_URL",
-        f"sqlite+aiosqlite:///{os.environ.get('DATA_DIR', '.')}/genselfie.db"
-    )
+    
+    @property
+    def upload_dir(self) -> Path:
+        return self.data_dir / "uploads"
+    
+    @property
+    def database_url(self) -> str:
+        return f"sqlite+aiosqlite:///{self.data_dir}/genselfie.db"
     
     class Config:
         env_file = ".env"
