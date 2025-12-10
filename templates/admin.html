@@ -224,7 +224,6 @@
         <!-- Example Inputs Section -->
         <section class="admin-section">
             <h2>Example Inputs</h2>
-            <p class="help-text">Images in <code>static/uploads/examples/</code> - used to generate example selfies</p>
             
             <div class="image-grid">
                 {% for example in example_inputs %}
@@ -233,8 +232,8 @@
                     <div class="image-info">
                         <span>{{ example.name }}</span>
                     </div>
-                    <div class="button-group">
-                        <form method="POST" action="/admin/generate-example/{{ example.filename }}" style="display: inline;">
+                    <div class="example-card-actions">
+                        <form method="POST" action="/admin/generate-example/{{ example.filename }}" class="example-generate-form">
                             <select name="preset_id" required>
                                 {% for p in presets %}
                                 <option value="{{ p.id }}">{{ p.name }}</option>
@@ -242,7 +241,7 @@
                             </select>
                             <button type="submit" class="btn btn-primary btn-small">Generate</button>
                         </form>
-                        <form method="POST" action="/admin/delete-example-input/{{ example.filename }}" style="display: inline;">
+                        <form method="POST" action="/admin/delete-example-input/{{ example.filename }}">
                             <button type="submit" class="btn btn-danger btn-small">Delete</button>
                         </form>
                     </div>
