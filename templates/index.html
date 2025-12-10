@@ -27,6 +27,27 @@
         <span class="queue-info" id="queue-info"></span>
     </div>
 
+    <!-- Step 1: Choose Style (Presets) -->
+    {% if presets %}
+    <div class="step" id="step-preset">
+        <h3>Step 1: Choose Style</h3>
+        <div class="preset-options">
+            {% for preset in presets %}
+            <label class="preset-option {% if loop.first %}selected{% endif %}">
+                <input type="radio" name="preset_id" value="{{ preset.id }}" {% if loop.first %}checked{% endif %}>
+                <div class="preset-option-content">
+                    <span class="preset-name">{{ preset.name }}</span>
+                    {% if preset.description %}
+                    <span class="preset-desc">{{ preset.description }}</span>
+                    {% endif %}
+                    <span class="preset-size">{{ preset.width }}x{{ preset.height }}</span>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Examples Gallery (always rendered so JS can populate per preset) -->
     <section class="examples" id="examples-section">
         <h2>Examples</h2>
@@ -62,9 +83,9 @@
     <section class="generate-section" id="generate-section" style="display: none;">
         <h2>Get Your Selfie</h2>
         
-        <!-- Step 1: Profile Image -->
+        <!-- Step {{ "2" if presets else "1" }}: Profile Image -->
         <div class="step" id="step-image">
-            <h3>Step 1: Your Photo</h3>
+            <h3>Step {{ "2" if presets else "1" }}: Your Photo</h3>
             
             <div class="tabs">
                 <button class="tab active" data-tab="social">Social Media</button>
@@ -102,30 +123,9 @@
             </div>
         </div>
 
-        <!-- Step 2: Choose Style (Presets) -->
-        {% if presets %}
-        <div class="step" id="step-preset">
-            <h3>Step 2: Choose Style</h3>
-            <div class="preset-options">
-                {% for preset in presets %}
-                <label class="preset-option {% if loop.first %}selected{% endif %}">
-                    <input type="radio" name="preset_id" value="{{ preset.id }}" {% if loop.first %}checked{% endif %}>
-                    <div class="preset-option-content">
-                        <span class="preset-name">{{ preset.name }}</span>
-                        {% if preset.description %}
-                        <span class="preset-desc">{{ preset.description }}</span>
-                        {% endif %}
-                        <span class="preset-size">{{ preset.width }}x{{ preset.height }}</span>
-                    </div>
-                </label>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
         <!-- Step {{ "3" if presets else "2" }}: Payment -->
         <div class="step" id="step-payment">
-            <h3>Step 2: Payment</h3>
+            <h3>Step {{ "3" if presets else "2" }}: Payment</h3>
             
             <div class="price-display">
                 <span class="price">{{ "%.2f"|format(settings.price_cents / 100) }} {{ settings.currency }}</span>
