@@ -904,11 +904,11 @@ body {
 }
 
 .inline-form input[type="text"] {
-    min-width: 220px;
+    min-width: 260px;
 }
 
 .inline-form input[type="number"] {
-    min-width: 200px;
+    min-width: 260px;
 }
 
 .inline-form input[type="date"] {
