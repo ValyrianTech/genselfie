@@ -115,8 +115,7 @@
             </div>
             
             <form method="POST" action="/admin/upload-influencer-image" enctype="multipart/form-data" class="upload-form">
-                <input type="file" name="file" accept="image/*" required>
-                <button type="submit" class="btn btn-primary">Upload Image</button>
+                <input type="file" name="file" accept="image/*" required onchange="this.form.submit()">
             </form>
         </section>
 
@@ -245,8 +244,7 @@
             </div>
             
             <form method="POST" action="/admin/upload-example-input" enctype="multipart/form-data" class="upload-form">
-                <input type="file" name="file" accept="image/*" required>
-                <button type="submit" class="btn btn-primary">Add Example Input</button>
+                <input type="file" name="file" accept="image/*" required onchange="this.form.submit()">
             </form>
             
             {% if example_inputs and presets %}
@@ -269,13 +267,12 @@
                 {% if presets %}
                 <form method="GET" action="/admin" class="inline-form" style="margin-bottom: 12px;">
                     <label for="filter-preset">Filter by preset</label>
-                    <select id="filter-preset" name="preset_id">
+                    <select id="filter-preset" name="preset_id" onchange="this.form.submit()">
                         <option value="">All</option>
                         {% for p in presets %}
                         <option value="{{ p.id }}" {% if selected_preset_id == p.id %}selected{% endif %}>{{ p.name }}</option>
                         {% endfor %}
                     </select>
-                    <button type="submit" class="btn btn-secondary btn-small">Apply</button>
                 </form>
                 {% endif %}
                 {% if generated_examples %}
