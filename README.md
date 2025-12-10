@@ -1,14 +1,40 @@
 # GenSelfie
 
-A single-tenant web application that allows influencers to let their fans generate AI selfies with them.
+A web application that allows influencers to let their fans generate AI selfies with them. Fans can upload a photo or fetch their profile picture from social media, pay via promo code or payment, and receive an AI-generated selfie with the influencer.
 
 ## Features
 
 - **Fan-facing page**: Fans can enter their social media handle or upload a photo, pay via promo code/Stripe/Lightning, and generate a selfie
-- **Admin panel**: Influencers can configure branding, pricing, upload reference images, manage promo codes, and upload ComfyUI workflows
-- **Social media integration**: Fetch profile pictures from Twitter/X, Bluesky, GitHub, and Mastodon
+- **Admin panel**: Influencers can configure branding, pricing, upload reference images, and manage promo codes
+- **Social media integration**: Fetch profile pictures from Twitter/X, Bluesky, GitHub, Mastodon, and Nostr
 - **Payment options**: Promo codes, Stripe, and Bitcoin Lightning (via LNbits)
 - **ComfyUI backend**: Image generation is handled by a ComfyUI server
+- **Presets**: Configure multiple generation presets with different influencer images, dimensions, prompts, and pricing
+
+## Prerequisites
+
+### ComfyUI Server (RunPod)
+
+This application requires a ComfyUI server for image generation. Deploy one on RunPod:
+
+1. **Get Hugging Face access**:
+   - Create a [Hugging Face](https://huggingface.co) account if you don't have one
+   - Go to [FLUX.2-dev](https://huggingface.co/black-forest-labs/FLUX.2-dev) and request access to the gated repository
+   - Create an access token at [Hugging Face Settings](https://huggingface.co/settings/tokens)
+
+2. **Deploy the ComfyUI pod**:
+   - Click this link to deploy: [Deploy ComfyUI on RunPod](https://console.runpod.io/deploy?template=rzg5z3pls5&ref=2vdt3dn9)
+   - Set your Hugging Face token in the pod's environment variables as `HF_TOKEN`
+
+3. **Download the models**:
+   - Once the pod is running, open a terminal in the pod
+   - Run: `bash /download_Flux2.sh`
+   - Wait for the models to download (this may take a while)
+
+4. **Get the ComfyUI URL**:
+   - In the RunPod dashboard, find the **Direct TCP Port Mappings** section (not the proxy URL)
+   - Copy the IP and port (e.g., `http://123.45.67.89:12345`)
+   - You'll need this for the `COMFYUI_URL` environment variable
 
 ## Quick Start
 
@@ -65,12 +91,7 @@ A single-tenant web application that allows influencers to let their fans genera
 | `LNBITS_URL` | LNbits instance URL | For Lightning payments |
 | `LNBITS_API_KEY` | LNbits API key | For Lightning payments |
 | `DEBUG` | Enable debug mode | No (default: false) |
-
-### ComfyUI Workflow
-
-Upload your ComfyUI workflow JSON via the admin panel. The workflow should have:
-- LoadImage nodes for fan and influencer images
-- The node titles should contain "fan" or "influencer" to help the system identify which image goes where
+| `VERBOSE` | Enable verbose logging | No (default: false) |
 
 ## Project Structure
 
@@ -89,7 +110,9 @@ GenSelfie/
 │   └── codes.py            # Promo code validation
 ├── templates/              # Jinja2 templates
 ├── static/                 # CSS, JS, uploads
-└── genselfie.db           # SQLite database
+├── workflows/              # ComfyUI workflow JSON files
+├── input_examples/         # Example input images
+└── genselfie.db           # SQLite database (created on first run)
 ```
 
 ## Supported Social Platforms
@@ -98,6 +121,7 @@ GenSelfie/
 - **Bluesky**: Uses AT Protocol public API
 - **GitHub**: Direct avatar URL
 - **Mastodon**: Uses instance API with WebFinger
+- **Nostr**: Uses nostrhttp.com API (supports npub, hex pubkey, and NIP-05 identifiers)
 
 ## License
 
