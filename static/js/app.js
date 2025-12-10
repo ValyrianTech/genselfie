@@ -1,5 +1,24 @@
 // GenSelfie Frontend Application
 
+// Download helper function for cross-origin images
+async function downloadImage(url, filename) {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        // Fallback: open in new tab
+        window.open(url, '_blank');
+    }
+}
+
 // Check server status
 async function checkServerStatus() {
     const indicator = document.getElementById('status-indicator');
@@ -578,7 +597,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     loading.style.display = 'none';
                     result.style.display = 'block';
                     resultImg.src = data.result_url;
-                    downloadBtn.href = data.result_url;
+                    // Set up download button with click handler for proper download
+                    downloadBtn.href = '#';
+                    downloadBtn.onclick = (e) => {
+                        e.preventDefault();
+                        downloadImage(data.result_url, 'selfie.png');
+                    };
                 } else if (data.status === 'failed') {
                     loading.innerHTML = '<p class="alert alert-error">Generation failed. Please try again.</p>';
                 } else {
