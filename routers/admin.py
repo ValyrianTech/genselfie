@@ -136,10 +136,14 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
             selected_preset_id = None
     generated_examples = get_generated_examples_from_disk(selected_preset_name)
     
+    # Create mapping of image IDs to names for display
+    image_names = {img.id: img.original_name for img in images}
+    
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "settings": settings,
         "images": images,
+        "image_names": image_names,
         "codes": codes,
         "generations": generations,
         "example_inputs": example_inputs,
