@@ -15,7 +15,17 @@ A web application that allows influencers to let their fans generate AI selfies 
 
 ### ComfyUI Server (RunPod)
 
-This application requires a ComfyUI server for image generation. Deploy one on RunPod:
+This application requires a ComfyUI server for image generation. You must use the **ValyrianTech ComfyUI template**, which includes an nginx server for serving output images.
+
+Docker images:
+- `valyriantech/comfyui-with-flux:latest` - Includes FLUX.1 models pre-installed
+- `valyriantech/comfyui-without-flux:latest` - Without FLUX models
+
+**Note:** The template comes with FLUX.1 pre-installed, but GenSelfie requires **FLUX.2**. You will need to download the FLUX.2 models after deployment.
+
+**Note:** FLUX.2 requires an **RTX PRO 6000 GPU** or equivalent.
+
+Deploy on RunPod:
 
 1. **Get Hugging Face access**:
    - Create a [Hugging Face](https://huggingface.co) account if you don't have one
@@ -24,6 +34,7 @@ This application requires a ComfyUI server for image generation. Deploy one on R
 
 2. **Deploy the ComfyUI pod**:
    - Click this link to deploy: [Deploy ComfyUI on RunPod](https://console.runpod.io/deploy?template=rzg5z3pls5&ref=2vdt3dn9)
+   - Select an **RTX PRO 6000** GPU (or equivalent with sufficient VRAM)
    - Set your Hugging Face token in the pod's environment variables as `HF_TOKEN`
 
 3. **Download the models**:
