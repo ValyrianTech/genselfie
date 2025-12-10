@@ -396,11 +396,16 @@ async def update_comfyui_url(
     from dotenv import set_key
     from config import ENV_PATH
     
+    # Clean and format the URL - trim spaces and add http:// prefix
+    clean_url = comfyui_url.strip()
+    if clean_url and not clean_url.startswith(("http://", "https://")):
+        clean_url = f"http://{clean_url}"
+    
     # Update .env file
-    set_key(str(ENV_PATH), "COMFYUI_URL", comfyui_url.strip())
+    set_key(str(ENV_PATH), "COMFYUI_URL", clean_url)
     
     # Update runtime config
-    app_settings.comfyui_url = comfyui_url.strip()
+    app_settings.comfyui_url = clean_url
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -577,18 +582,19 @@ async def generate_all_examples(
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/delete-generated/{filename:path}")
+@router.post("/delete-generated/{filepath:path}")
 async def delete_generated(
     request: Request,
-    filename: str
+    filepath: str
 ):
     """Delete a generated example image."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    filepath = app_settings.upload_dir / "generated" / filename
-    if filepath.exists():
-        filepath.unlink()
+    # filepath is relative to uploads dir (e.g., "generated/preset/image.png")
+    full_path = app_settings.upload_dir / filepath
+    if full_path.exists():
+        full_path.unlink()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 

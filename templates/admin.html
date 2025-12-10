@@ -366,14 +366,17 @@
             <form method="POST" action="/admin/comfyui-url">
                 <div class="form-group">
                     <label for="comfyui_url">Server URL</label>
-                    <input type="url" id="comfyui_url" name="comfyui_url" 
-                           value="{{ comfyui_url }}" 
-                           placeholder="http://localhost:8188">
+                    <div class="input-with-prefix">
+                        <span class="input-prefix">http://</span>
+                        <input type="text" id="comfyui_url" name="comfyui_url" 
+                               value="{{ comfyui_url.replace('http://', '').replace('https://', '') }}" 
+                               placeholder="localhost:8188">
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Save URL</button>
             </form>
             
-            <p class="help-text" style="margin-top: 16px;">Workflow: <code>workflows/genselfie.json</code></p>
+            <p class="help-text" style="margin-top: 16px;">⚠️ Use the direct TCP port mapped to 8080 from RunPod, not the proxy link. Format: <code>xx.xx.xx.xx:xxxxx</code></p>
         </section>
 
         <!-- Recent Generations Section -->
