@@ -27,6 +27,9 @@ env/
 static/uploads/*
 !static/uploads/.gitkeep
 
+# Data directory (database and uploads on RunPod)
+data/
+
 # OS
 .DS_Store
 Thumbs.db
