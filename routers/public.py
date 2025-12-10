@@ -1,10 +1,11 @@
 from typing import Optional
 from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+import httpx
 
 from config import settings as app_settings
 from database import get_db, Settings, InfluencerImage, Generation, PromoCode, Preset
@@ -355,7 +356,8 @@ async def generation_status(generation_id: int, db: AsyncSession = Depends(get_d
     if generation.status == "completed":
         return JSONResponse({
             "status": "completed",
-            "result_url": generation.result_image_url
+            "result_url": generation.result_image_url,
+            "download_url": f"/api/download/{generation_id}"
         })
     
     if generation.status == "failed":
@@ -372,7 +374,35 @@ async def generation_status(generation_id: int, db: AsyncSession = Depends(get_d
             await db.commit()
             return JSONResponse({
                 "status": "completed",
-                "result_url": generation.result_image_url
+                "result_url": generation.result_image_url,
+                "download_url": f"/api/download/{generation_id}"
             })
     
     return JSONResponse({"status": generation.status})
+
+
+@router.get("/api/download/{generation_id}")
+async def download_image(generation_id: int, db: AsyncSession = Depends(get_db)):
+    """Download the generated image (proxied to handle cross-origin)."""
+    generation = await db.get(Generation, generation_id)
+    if not generation:
+        raise HTTPException(status_code=404, detail="Generation not found")
+    
+    if generation.status != "completed" or not generation.result_image_url:
+        raise HTTPException(status_code=400, detail="Image not ready")
+    
+    # Fetch the image from ComfyUI
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(generation.result_image_url)
+            response.raise_for_status()
+            
+            return Response(
+                content=response.content,
+                media_type="image/png",
+                headers={
+                    "Content-Disposition": f"attachment; filename=selfie_{generation_id}.png"
+                }
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to download image: {str(e)}")
