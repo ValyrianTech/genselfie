@@ -45,8 +45,14 @@ class Settings(BaseSettings):
     lnbits_api_key: str = ""
     
     # Paths
-    base_dir: Path = Path(__file__).parent
-    data_dir: Path = Path(os.environ.get("DATA_DIR", "/workspace"))
+    base_dir: Path = Path(__file__).parent.resolve()
+    
+    @property
+    def data_dir(self) -> Path:
+        data_path = Path(os.environ.get("DATA_DIR", "/workspace"))
+        if not data_path.is_absolute():
+            return (self.base_dir / data_path).resolve()
+        return data_path
     
     @property
     def upload_dir(self) -> Path:
