@@ -6,9 +6,16 @@
 <div class="admin-container">
     <header class="admin-header">
         <h1>{{ settings.app_name }} Admin</h1>
-        <form method="POST" action="/admin/logout" style="display: inline;">
-            <button type="submit" class="btn btn-secondary">Logout</button>
-        </form>
+        <div class="header-right">
+            <div class="server-status" id="server-status">
+                <span class="status-indicator" id="status-indicator"></span>
+                <span class="status-text" id="status-text">Checking ComfyUI...</span>
+                <span class="queue-info" id="queue-info"></span>
+            </div>
+            <form method="POST" action="/admin/logout" style="display: inline;">
+                <button type="submit" class="btn btn-secondary">Logout</button>
+            </form>
+        </div>
     </header>
 
     <div class="admin-grid">
@@ -414,4 +421,41 @@
         </section>
     </div>
 </div>
+
+<script>
+(function() {
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    const queueInfo = document.getElementById('queue-info');
+    
+    async function checkServerStatus() {
+        try {
+            const response = await fetch('/api/server-status');
+            const data = await response.json();
+            
+            if (data.online) {
+                statusIndicator.className = 'status-indicator online';
+                statusText.textContent = 'ComfyUI Online';
+                if (data.queue_size > 0) {
+                    queueInfo.textContent = `(${data.queue_size} in queue)`;
+                } else {
+                    queueInfo.textContent = '';
+                }
+            } else {
+                statusIndicator.className = 'status-indicator offline';
+                statusText.textContent = 'ComfyUI Offline';
+                queueInfo.textContent = '';
+            }
+        } catch (error) {
+            statusIndicator.className = 'status-indicator offline';
+            statusText.textContent = 'ComfyUI Offline';
+            queueInfo.textContent = '';
+        }
+    }
+    
+    // Check immediately and then every 10 seconds
+    checkServerStatus();
+    setInterval(checkServerStatus, 10000);
+})();
+</script>
 {% endblock %}

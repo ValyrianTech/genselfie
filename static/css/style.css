@@ -562,6 +562,20 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
+.admin-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.admin-header .server-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
 .admin-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
