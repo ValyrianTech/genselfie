@@ -140,7 +140,7 @@ docker build -t genselfie .
 # Run with environment variables and persistent storage
 docker run -p 8000:8000 \
   -e ADMIN_PASSWORD=your_password \
-  -e COMFYUI_URL=http://your-comfyui-server:8188 \
+  -e COMFYUI_URL=http://your-comfyui-server:8080 \
   -e DATA_DIR=/app/data \
   -v ./data:/app/data \
   genselfie
