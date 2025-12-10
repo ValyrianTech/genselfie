@@ -75,23 +75,29 @@
             
             <div class="upload-group">
                 <h3>Banner Image</h3>
+                <p class="help-text">Recommended: 1200×300 pixels or similar wide aspect ratio</p>
                 {% if settings.banner_image %}
                 <img src="/uploads/{{ settings.banner_image }}" alt="Current banner" class="preview-small">
                 {% endif %}
-                <form method="POST" action="/admin/upload-banner" enctype="multipart/form-data">
-                    <input type="file" name="file" accept="image/*" required>
-                    <button type="submit" class="btn btn-secondary">Upload Banner</button>
+                <form method="POST" action="/admin/upload-banner" enctype="multipart/form-data" class="auto-upload-form">
+                    <label class="drop-zone">
+                        <input type="file" name="file" accept="image/*" required>
+                        <span>Drop image here or click to browse</span>
+                    </label>
                 </form>
             </div>
             
             <div class="upload-group">
                 <h3>Logo</h3>
+                <p class="help-text">Recommended: 200×200 pixels, square or circular format</p>
                 {% if settings.logo_image %}
                 <img src="/uploads/{{ settings.logo_image }}" alt="Current logo" class="preview-small logo-preview">
                 {% endif %}
-                <form method="POST" action="/admin/upload-logo" enctype="multipart/form-data">
-                    <input type="file" name="file" accept="image/*" required>
-                    <button type="submit" class="btn btn-secondary">Upload Logo</button>
+                <form method="POST" action="/admin/upload-logo" enctype="multipart/form-data" class="auto-upload-form">
+                    <label class="drop-zone">
+                        <input type="file" name="file" accept="image/*" required>
+                        <span>Drop image here or click to browse</span>
+                    </label>
                 </form>
             </div>
         </section>
@@ -114,8 +120,11 @@
                 {% endfor %}
             </div>
             
-            <form method="POST" action="/admin/upload-influencer-image" enctype="multipart/form-data" class="upload-form">
-                <input type="file" name="file" accept="image/*" required onchange="this.form.submit()">
+            <form method="POST" action="/admin/upload-influencer-image" enctype="multipart/form-data" class="auto-upload-form">
+                <label class="drop-zone">
+                    <input type="file" name="file" accept="image/*" required>
+                    <span>Drop image here or click to browse</span>
+                </label>
             </form>
         </section>
 
@@ -243,8 +252,11 @@
                 {% endfor %}
             </div>
             
-            <form method="POST" action="/admin/upload-example-input" enctype="multipart/form-data" class="upload-form">
-                <input type="file" name="file" accept="image/*" required onchange="this.form.submit()">
+            <form method="POST" action="/admin/upload-example-input" enctype="multipart/form-data" class="auto-upload-form">
+                <label class="drop-zone">
+                    <input type="file" name="file" accept="image/*" required>
+                    <span>Drop image here or click to browse</span>
+                </label>
             </form>
             
             {% if example_inputs and presets %}
@@ -453,6 +465,41 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function(e) {
             if (!confirm('Are you sure you want to delete this? This action cannot be undone.')) {
                 e.preventDefault();
+            }
+        });
+    });
+    
+    // Auto-upload forms
+    document.querySelectorAll('.auto-upload-form').forEach(function(form) {
+        const input = form.querySelector('input[type="file"]');
+        const dropZone = form.querySelector('.drop-zone');
+        
+        // Submit on file selection
+        input.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                dropZone.querySelector('span').textContent = 'Uploading...';
+                form.submit();
+            }
+        });
+        
+        // Drag and drop
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        });
+        
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                input.files = e.dataTransfer.files;
+                dropZone.querySelector('span').textContent = 'Uploading...';
+                form.submit();
             }
         });
     });

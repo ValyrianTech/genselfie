@@ -739,6 +739,40 @@ body {
     flex-wrap: wrap;
 }
 
+/* Drop Zone */
+.drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 80px;
+    padding: 20px;
+    border: 2px dashed var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--card-bg);
+}
+
+.drop-zone:hover {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.drop-zone.drag-over {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.drop-zone input[type="file"] {
+    display: none;
+}
+
+.drop-zone span {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
 .preview-small {
     max-width: 200px;
     max-height: 100px;
