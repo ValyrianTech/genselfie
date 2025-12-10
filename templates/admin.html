@@ -435,11 +435,8 @@
             if (data.online) {
                 statusIndicator.className = 'status-indicator online';
                 statusText.textContent = 'ComfyUI Online';
-                if (data.queue_size > 0) {
-                    queueInfo.textContent = `(${data.queue_size} in queue)`;
-                } else {
-                    queueInfo.textContent = '';
-                }
+                const queueSize = data.queue_size || 0;
+                queueInfo.textContent = `Queue: ${queueSize}`;
             } else {
                 statusIndicator.className = 'status-indicator offline';
                 statusText.textContent = 'ComfyUI Offline';
