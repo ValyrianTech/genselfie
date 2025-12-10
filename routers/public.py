@@ -290,10 +290,8 @@ async def generate(
             raise HTTPException(status_code=400, detail="Preset's influencer image not found")
         influencer_images = [influencer_image]
     else:
-        # Fall back to all influencer images (primary first)
-        result = await db.execute(
-            select(InfluencerImage).order_by(InfluencerImage.is_primary.desc())
-        )
+        # Fall back to all influencer images
+        result = await db.execute(select(InfluencerImage))
         influencer_images = result.scalars().all()
     
     if not influencer_images:

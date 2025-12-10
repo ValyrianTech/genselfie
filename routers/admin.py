@@ -268,7 +268,6 @@ async def upload_logo(
 async def upload_influencer_image(
     request: Request,
     file: UploadFile = File(...),
-    is_primary: bool = Form(False),
     db: AsyncSession = Depends(get_db)
 ):
     """Upload influencer reference image."""
@@ -284,17 +283,10 @@ async def upload_influencer_image(
     with open(filepath, "wb") as f:
         f.write(content)
     
-    # If this is primary, unset other primaries
-    if is_primary:
-        result = await db.execute(select(InfluencerImage).where(InfluencerImage.is_primary == True))
-        for img in result.scalars().all():
-            img.is_primary = False
-    
     # Create record
     image = InfluencerImage(
         filename=filename,
-        original_name=file.filename,
-        is_primary=is_primary
+        original_name=file.filename
     )
     db.add(image)
     await db.commit()

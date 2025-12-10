@@ -45,7 +45,6 @@ class InfluencerImage(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     filename: Mapped[str] = mapped_column(String(500))
     original_name: Mapped[str] = mapped_column(String(500))
-    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

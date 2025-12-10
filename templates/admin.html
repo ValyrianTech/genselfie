@@ -106,7 +106,6 @@
                     <img src="/static/uploads/{{ image.filename }}" alt="{{ image.original_name }}">
                     <div class="image-info">
                         <span>{{ image.original_name }}</span>
-                        {% if image.is_primary %}<span class="badge">Primary</span>{% endif %}
                     </div>
                     <form method="POST" action="/admin/delete-influencer-image/{{ image.id }}">
                         <button type="submit" class="btn btn-danger btn-small">Delete</button>
@@ -117,9 +116,6 @@
             
             <form method="POST" action="/admin/upload-influencer-image" enctype="multipart/form-data" class="upload-form">
                 <input type="file" name="file" accept="image/*" required>
-                <label>
-                    <input type="checkbox" name="is_primary"> Set as primary
-                </label>
                 <button type="submit" class="btn btn-primary">Upload Image</button>
             </form>
         </section>
@@ -183,7 +179,7 @@
                         <label for="preset-image">Influencer Image</label>
                         <select id="preset-image" name="influencer_image_id" required>
                             {% for image in images %}
-                            <option value="{{ image.id }}">{{ image.original_name }}{% if image.is_primary %} (Primary){% endif %}</option>
+                            <option value="{{ image.id }}">{{ image.original_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
