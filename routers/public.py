@@ -17,15 +17,22 @@ router = APIRouter(tags=["public"])
 templates = Jinja2Templates(directory="templates")
 
 
-def get_example_images_from_disk(preset_id: Optional[int] = None) -> list[dict]:
+def sanitize_folder_name(name: str) -> str:
+    """Sanitize a preset name for use as a folder name."""
+    safe = "".join(c if c.isalnum() or c in "._- " else "" for c in name)
+    safe = safe.replace(" ", "_").strip("._- ")
+    return safe or "default"
+
+
+def get_example_images_from_disk(preset_name: Optional[str] = None) -> list[dict]:
     """Get example images directly from the generated directory.
-    If preset_id is provided, try static/uploads/generated/<preset_id>/ first,
+    If preset_name is provided, try static/uploads/generated/<preset_name>/ first,
     otherwise fall back to static/uploads/generated/ root.
     """
     generated_dir = app_settings.upload_dir / "generated"
     # If preset-specific folder exists, prefer it
-    if preset_id is not None:
-        preset_dir = generated_dir / str(preset_id)
+    if preset_name is not None:
+        preset_dir = generated_dir / sanitize_folder_name(preset_name)
         if preset_dir.exists():
             generated_dir = preset_dir
     examples = []
@@ -48,8 +55,6 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
     # Get settings
     settings = await db.get(Settings, 1)
     
-    # Get example images from disk (initially for first active preset if available)
-    
     # Get active presets
     result = await db.execute(
         select(Preset)
@@ -57,8 +62,10 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
         .order_by(Preset.sort_order, Preset.created_at)
     )
     presets = result.scalars().all()
-    first_preset_id = presets[0].id if presets else None
-    examples = get_example_images_from_disk(first_preset_id)
+    
+    # Get example images from disk (initially for first active preset if available)
+    first_preset_name = presets[0].name if presets else None
+    examples = get_example_images_from_disk(first_preset_name)
     
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -69,13 +76,17 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/api/examples")
-async def api_examples(preset_id: Optional[int] = None):
+async def api_examples(preset_id: Optional[int] = None, db: AsyncSession = Depends(get_db)):
     """Return example images for an optional preset_id."""
-    try:
-        pid = int(preset_id) if preset_id is not None else None
-    except (TypeError, ValueError):
-        pid = None
-    examples = get_example_images_from_disk(pid)
+    preset_name = None
+    if preset_id is not None:
+        try:
+            preset = await db.get(Preset, int(preset_id))
+            if preset:
+                preset_name = preset.name
+        except (TypeError, ValueError):
+            pass
+    examples = get_example_images_from_disk(preset_name)
     return JSONResponse({"examples": examples})
 
 
