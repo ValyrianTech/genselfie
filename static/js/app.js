@@ -88,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const lightboxClose = document.querySelector('.lightbox-close');
     const resultImg = document.getElementById('result-img');
     const downloadBtn = document.getElementById('download-btn');
-    const newSelfieBtn = document.getElementById('new-selfie');
 
     // Platform help text
     const platformHelp = {
@@ -595,36 +594,4 @@ document.addEventListener('DOMContentLoaded', function() {
         poll();
     }
 
-    // New selfie button
-    if (newSelfieBtn) {
-        newSelfieBtn.addEventListener('click', () => {
-            // Reset state
-            state = {
-                platform: 'twitter',
-                handle: '',
-                imageUrl: null,
-                uploadedFile: null,
-                paymentMethod: null,
-                paymentId: null,
-                promoCode: null,
-                generationId: null
-            };
-            
-            // Reset UI
-            imagePreview.style.display = 'none';
-            stepGenerate.style.display = 'none';
-            stepResult.style.display = 'none';
-            loading.style.display = 'block';
-            result.style.display = 'none';
-            
-            if (promoCodeInput) promoCodeInput.value = '';
-            if (codeStatus) codeStatus.innerHTML = '';
-            if (handleInput) handleInput.value = '';
-            if (photoUpload) photoUpload.value = '';
-            if (generateBtn) {
-                generateBtn.disabled = false;
-                generateBtn.textContent = 'Generate Selfie';
-            }
-        });
-    }
 });
