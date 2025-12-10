@@ -346,6 +346,24 @@ async def generate(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def download_and_save_result(generation_id: int, comfyui_url: str) -> str:
+    """Download image from ComfyUI and save locally. Returns local URL."""
+    results_dir = app_settings.upload_dir / "results"
+    results_dir.mkdir(exist_ok=True, parents=True)
+    
+    filename = f"selfie_{generation_id}.png"
+    save_path = results_dir / filename
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(comfyui_url)
+        response.raise_for_status()
+        
+        with open(save_path, "wb") as f:
+            f.write(response.content)
+    
+    return f"/static/uploads/results/{filename}"
+
+
 @router.get("/api/generation-status/{generation_id}")
 async def generation_status(generation_id: int, db: AsyncSession = Depends(get_db)):
     """Check generation status and get result."""
@@ -356,8 +374,7 @@ async def generation_status(generation_id: int, db: AsyncSession = Depends(get_d
     if generation.status == "completed":
         return JSONResponse({
             "status": "completed",
-            "result_url": generation.result_image_url,
-            "download_url": f"/api/download/{generation_id}"
+            "result_url": generation.result_image_url
         })
     
     if generation.status == "failed":
@@ -367,42 +384,22 @@ async def generation_status(generation_id: int, db: AsyncSession = Depends(get_d
         # Check ComfyUI status
         result = await get_generation_status(generation.prompt_id)
         if result.get("completed"):
-            generation.status = "completed"
-            generation.result_image_url = result.get("image_url")
-            from datetime import datetime
-            generation.completed_at = datetime.utcnow()
-            await db.commit()
-            return JSONResponse({
-                "status": "completed",
-                "result_url": generation.result_image_url,
-                "download_url": f"/api/download/{generation_id}"
-            })
+            comfyui_url = result.get("image_url")
+            # Download and save locally
+            try:
+                local_url = await download_and_save_result(generation_id, comfyui_url)
+                generation.status = "completed"
+                generation.result_image_url = local_url
+                from datetime import datetime
+                generation.completed_at = datetime.utcnow()
+                await db.commit()
+                return JSONResponse({
+                    "status": "completed",
+                    "result_url": local_url
+                })
+            except Exception as e:
+                generation.status = "failed"
+                await db.commit()
+                return JSONResponse({"status": "failed", "error": str(e)})
     
     return JSONResponse({"status": generation.status})
-
-
-@router.get("/api/download/{generation_id}")
-async def download_image(generation_id: int, db: AsyncSession = Depends(get_db)):
-    """Download the generated image (proxied to handle cross-origin)."""
-    generation = await db.get(Generation, generation_id)
-    if not generation:
-        raise HTTPException(status_code=404, detail="Generation not found")
-    
-    if generation.status != "completed" or not generation.result_image_url:
-        raise HTTPException(status_code=400, detail="Image not ready")
-    
-    # Fetch the image from ComfyUI
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(generation.result_image_url)
-            response.raise_for_status()
-            
-            return Response(
-                content=response.content,
-                media_type="image/png",
-                headers={
-                    "Content-Disposition": f"attachment; filename=selfie_{generation_id}.png"
-                }
-            )
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to download image: {str(e)}")

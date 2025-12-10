@@ -578,8 +578,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     loading.style.display = 'none';
                     result.style.display = 'block';
                     resultImg.src = data.result_url;
-                    // Use backend proxy URL for download (handles cross-origin)
-                    downloadBtn.href = data.download_url || data.result_url;
+                    downloadBtn.href = data.result_url;
+                    downloadBtn.download = 'selfie.png';
                 } else if (data.status === 'failed') {
                     loading.innerHTML = '<p class="alert alert-error">Generation failed. Please try again.</p>';
                 } else {
