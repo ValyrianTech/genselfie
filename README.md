@@ -103,6 +103,16 @@ Deploy on RunPod:
 | `LNBITS_API_KEY` | LNbits API key | For Lightning payments |
 | `DEBUG` | Enable debug mode | No (default: false) |
 | `VERBOSE` | Enable verbose logging | No (default: false) |
+| `DATA_DIR` | Directory for database and data files | No (default: app directory) |
+| `UPLOAD_DIR` | Directory for uploaded files | No (default: static/uploads) |
+| `DATABASE_URL` | SQLite database URL | No (default: DATA_DIR/genselfie.db) |
+
+For RunPod serverless with network volumes, set:
+```bash
+DATA_DIR=/workspace/data
+UPLOAD_DIR=/workspace/uploads
+DATABASE_URL=sqlite+aiosqlite:////workspace/data/genselfie.db
+```
 
 ## Project Structure
 

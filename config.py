@@ -46,8 +46,12 @@ class Settings(BaseSettings):
     
     # Paths
     base_dir: Path = Path(__file__).parent
-    upload_dir: Path = Path(__file__).parent / "static" / "uploads"
-    database_url: str = "sqlite+aiosqlite:///./genselfie.db"
+    data_dir: Path = Path(os.environ.get("DATA_DIR", Path(__file__).parent))
+    upload_dir: Path = Path(os.environ.get("UPLOAD_DIR", Path(__file__).parent / "static" / "uploads"))
+    database_url: str = os.environ.get(
+        "DATABASE_URL",
+        f"sqlite+aiosqlite:///{os.environ.get('DATA_DIR', '.')}/genselfie.db"
+    )
     
     class Config:
         env_file = ".env"
@@ -58,7 +62,8 @@ class Settings(BaseSettings):
 _admin_password = ensure_admin_password()
 settings = Settings(admin_password=_admin_password)
 
-# Ensure upload directory exists
+# Ensure directories exist
+settings.data_dir.mkdir(parents=True, exist_ok=True)
 settings.upload_dir.mkdir(parents=True, exist_ok=True)
 
 # Configure logging
