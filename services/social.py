@@ -1,6 +1,6 @@
 """Social media profile image fetching service.
 
-Supports: Twitter/X, Bluesky, GitHub, Mastodon
+Supports: Twitter/X, Bluesky, GitHub, Mastodon, Nostr
 """
 
 import httpx
@@ -12,7 +12,7 @@ async def fetch_profile_image(platform: str, handle: str) -> Optional[str]:
     """Fetch profile image URL from a social media platform.
     
     Args:
-        platform: One of 'twitter', 'bluesky', 'github', 'mastodon'
+        platform: One of 'twitter', 'bluesky', 'github', 'mastodon', 'nostr'
         handle: The user's handle (without @ prefix for most platforms)
     
     Returns:
@@ -31,6 +31,8 @@ async def fetch_profile_image(platform: str, handle: str) -> Optional[str]:
         return await fetch_github_profile(handle)
     elif platform == "mastodon":
         return await fetch_mastodon_profile(handle)
+    elif platform == "nostr":
+        return await fetch_nostr_profile(handle)
     else:
         raise ValueError(f"Unsupported platform: {platform}")
 
@@ -122,6 +124,63 @@ async def fetch_mastodon_profile(handle: str) -> Optional[str]:
     return None
 
 
+async def fetch_nostr_profile(handle: str) -> Optional[str]:
+    """Fetch Nostr profile image via public APIs.
+    
+    Handle format: npub1... (bech32 encoded public key) or hex pubkey
+    Also supports NIP-05 identifiers like user@domain.com
+    """
+    # Try multiple Nostr profile services
+    
+    # If it looks like a NIP-05 identifier (contains @), resolve it first
+    if "@" in handle and not handle.startswith("npub"):
+        # NIP-05 identifier like user@domain.com
+        try:
+            username, domain = handle.split("@", 1)
+            nip05_url = f"https://{domain}/.well-known/nostr.json?name={username}"
+            async with httpx.AsyncClient() as client:
+                response = await client.get(nip05_url, timeout=10.0)
+                if response.status_code == 200:
+                    data = response.json()
+                    names = data.get("names", {})
+                    hex_pubkey = names.get(username)
+                    if hex_pubkey:
+                        handle = hex_pubkey  # Use hex pubkey for profile lookup
+        except (httpx.RequestError, ValueError, KeyError):
+            pass
+    
+    # Try primal.net API (works with npub or hex)
+    primal_url = f"https://primal.net/api/user/profile/{handle}"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(primal_url, timeout=10.0)
+            if response.status_code == 200:
+                data = response.json()
+                picture = data.get("picture")
+                if picture:
+                    return picture
+        except (httpx.RequestError, ValueError):
+            pass
+    
+    # Fallback: try nostr.band API
+    nostr_band_url = f"https://api.nostr.band/v0/profiles/{handle}"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(nostr_band_url, timeout=10.0)
+            if response.status_code == 200:
+                data = response.json()
+                profiles = data.get("profiles", [])
+                if profiles and len(profiles) > 0:
+                    profile = profiles[0].get("profile", {})
+                    picture = profile.get("picture")
+                    if picture:
+                        return picture
+        except (httpx.RequestError, ValueError):
+            pass
+    
+    return None
+
+
 # Platform metadata for frontend
 PLATFORMS = {
     "twitter": {
@@ -147,5 +206,11 @@ PLATFORMS = {
         "placeholder": "user@instance.social",
         "icon": "mastodon",
         "help": "Enter your full Mastodon handle (user@instance)"
+    },
+    "nostr": {
+        "name": "Nostr",
+        "placeholder": "npub1... or user@domain.com",
+        "icon": "zap",
+        "help": "Enter your npub, hex pubkey, or NIP-05 identifier"
     }
 }

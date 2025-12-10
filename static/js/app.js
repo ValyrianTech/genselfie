@@ -94,14 +94,16 @@ document.addEventListener('DOMContentLoaded', function() {
         twitter: 'Enter your Twitter/X username without @',
         bluesky: 'Enter your Bluesky handle (e.g., user.bsky.social)',
         github: 'Enter your GitHub username',
-        mastodon: 'Enter your full Mastodon handle (user@instance.social)'
+        mastodon: 'Enter your full Mastodon handle (user@instance.social)',
+        nostr: 'Enter your npub, hex pubkey, or NIP-05 identifier'
     };
 
     const platformPlaceholders = {
         twitter: 'username',
         bluesky: 'user.bsky.social',
         github: 'username',
-        mastodon: 'user@instance.social'
+        mastodon: 'user@instance.social',
+        nostr: 'npub1... or user@domain.com'
     };
 
     // Tab switching
