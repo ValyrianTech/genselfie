@@ -32,6 +32,7 @@ COPY services/ ./services/
 COPY templates/ ./templates/
 COPY static/ ./static/
 COPY workflows/ ./workflows/
+COPY input_examples/ ./input_examples/
 COPY start.sh ./
 
 # Make start script executable
