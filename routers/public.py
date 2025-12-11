@@ -17,6 +17,9 @@ from services.payments import create_stripe_payment, create_lightning_invoice, c
 router = APIRouter(tags=["public"])
 templates = Jinja2Templates(directory="templates")
 
+# Supported image extensions
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+
 
 def sanitize_folder_name(name: str) -> str:
     """Sanitize a preset name for use as a folder name."""
@@ -39,7 +42,7 @@ def get_example_images_from_disk(preset_name: Optional[str] = None) -> list[dict
     examples = []
     
     if generated_dir.exists():
-        for img_path in sorted(generated_dir.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for img_path in sorted([p for p in generated_dir.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS], key=lambda p: p.stat().st_mtime, reverse=True):
             # Build URL reflecting preset subfolder if present
             rel_path = img_path.relative_to(app_settings.upload_dir)
             examples.append({

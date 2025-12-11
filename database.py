@@ -166,7 +166,8 @@ async def init_db():
             examples_upload_dir.mkdir(exist_ok=True)
             
             if input_examples_dir.exists():
-                for img_path in input_examples_dir.glob("*.png"):
+                image_extensions = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+                for img_path in [p for p in input_examples_dir.iterdir() if p.suffix.lower() in image_extensions]:
                     # Copy to uploads/examples
                     dest_path = examples_upload_dir / img_path.name
                     shutil.copy(img_path, dest_path)

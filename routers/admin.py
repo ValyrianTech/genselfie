@@ -16,6 +16,9 @@ from database import get_db, Settings, InfluencerImage, PromoCode, Generation, P
 router = APIRouter(tags=["admin"])
 templates = Jinja2Templates(directory="templates")
 
+# Supported image extensions
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+
 # Simple session storage (in production, use proper session management)
 admin_sessions: set[str] = set()
 
@@ -26,7 +29,7 @@ def get_example_inputs_from_disk() -> list[dict]:
     inputs = []
     
     if examples_dir.exists():
-        for img_path in sorted(examples_dir.glob("*.png"), key=lambda p: p.name):
+        for img_path in sorted([p for p in examples_dir.iterdir() if p.suffix.lower() in IMAGE_EXTENSIONS], key=lambda p: p.name):
             inputs.append({
                 "filename": img_path.name,
                 "name": img_path.stem,
@@ -56,7 +59,7 @@ def get_generated_examples_from_disk(preset_name: Optional[str] = None) -> list[
         return examples
     
     def add_from_dir(dir_path: Path, folder_name: Optional[str]):
-        for img_path in sorted(dir_path.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for img_path in sorted([p for p in dir_path.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS], key=lambda p: p.stat().st_mtime, reverse=True):
             rel_from_uploads = img_path.relative_to(app_settings.upload_dir)
             examples.append({
                 "relpath": rel_from_uploads.as_posix(),
