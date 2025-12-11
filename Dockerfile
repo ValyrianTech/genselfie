@@ -17,14 +17,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Production stage
-FROM python:3.12-slim AS production
+FROM python:3.12 AS production
 
 WORKDIR /app
-
-# Install bash for RunPod web terminal
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
