@@ -521,6 +521,11 @@ body {
     padding: 8px;
 }
 
+#lightning-qr img,
+#lightning-qr canvas {
+    display: block;
+}
+
 #lightning-request {
     width: 100%;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;

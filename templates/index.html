@@ -2,7 +2,7 @@
 
 {% block head %}
 <script src="https://js.stripe.com/v3/"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
 {% endblock %}
 
 {% block body %}
@@ -172,7 +172,7 @@
                     <h4>Pay with Bitcoin Lightning</h4>
                     <button type="button" class="btn btn-primary" id="pay-lightning">Generate Invoice</button>
                     <div id="lightning-invoice" style="display: none;">
-                        <canvas id="lightning-qr"></canvas>
+                        <div id="lightning-qr"></div>
                         <input type="text" id="lightning-request" readonly>
                         <button type="button" class="btn btn-secondary" id="copy-invoice">Copy</button>
                     </div>
