@@ -439,12 +439,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show invoice
                 const invoiceDiv = document.getElementById('lightning-invoice');
                 const requestInput = document.getElementById('lightning-request');
+                const qrCanvas = document.getElementById('lightning-qr');
                 
                 invoiceDiv.style.display = 'block';
                 requestInput.value = data.payment_request;
                 
-                // Generate QR code (using a simple library or API)
-                // For now, just show the text
+                // Generate QR code
+                if (typeof QRCode !== 'undefined' && qrCanvas) {
+                    QRCode.toCanvas(qrCanvas, data.payment_request.toUpperCase(), {
+                        width: 256,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    }, function(error) {
+                        if (error) console.error('QR code error:', error);
+                    });
+                }
                 
                 state.paymentId = data.checking_id;
                 

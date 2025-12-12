@@ -72,6 +72,25 @@ async def check_stripe_payment(payment_intent_id: str) -> dict:
 # LNbits (Lightning Network) Integration
 # ============================================================================
 
+async def get_btc_price_usd() -> Optional[float]:
+    """Fetch current BTC price in USD from CoinGecko API.
+    
+    Returns:
+        BTC price in USD, or None if fetch fails
+    """
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, timeout=10.0)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("bitcoin", {}).get("usd")
+        except httpx.RequestError:
+            pass
+    return None
+
+
 async def create_lightning_invoice(amount_cents: int, currency: str) -> dict:
     """Create a Lightning invoice via LNbits.
     
@@ -85,11 +104,18 @@ async def create_lightning_invoice(amount_cents: int, currency: str) -> dict:
     if not settings.lnbits_url or not settings.lnbits_api_key:
         return {"error": "LNbits not configured"}
     
-    # Convert cents to satoshis (rough conversion, should use real exchange rate)
-    # For now, assume 1 USD = 100 cents = ~2500 sats (adjust based on BTC price)
-    # In production, you'd want to fetch the current exchange rate
+    # Convert cents to satoshis using current exchange rate
     if currency.upper() == "USD":
-        amount_sats = int(amount_cents * 25)  # Rough estimate: $1 = 2500 sats
+        btc_price = await get_btc_price_usd()
+        if btc_price and btc_price > 0:
+            # 1 BTC = 100,000,000 sats
+            # amount_cents / 100 = USD amount
+            # USD amount / btc_price = BTC amount
+            # BTC amount * 100,000,000 = sats
+            amount_sats = int((amount_cents / 100) / btc_price * 100_000_000)
+        else:
+            # Fallback if API fails: use approximate rate
+            amount_sats = int(amount_cents * 25)
     else:
         amount_sats = amount_cents  # Assume already in sats if not USD
     
