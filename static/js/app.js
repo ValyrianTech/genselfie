@@ -439,23 +439,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show invoice
                 const invoiceDiv = document.getElementById('lightning-invoice');
                 const requestInput = document.getElementById('lightning-request');
-                const qrDiv = document.getElementById('lightning-qr');
+                const qrImg = document.getElementById('lightning-qr');
                 
                 invoiceDiv.style.display = 'flex';
                 requestInput.value = data.payment_request;
                 
-                // Generate QR code
-                if (typeof QRCode !== 'undefined' && qrDiv) {
-                    // Clear previous QR code
-                    qrDiv.innerHTML = '';
-                    new QRCode(qrDiv, {
-                        text: data.payment_request.toUpperCase(),
-                        width: 256,
-                        height: 256,
-                        colorDark: '#000000',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.L
-                    });
+                // Display server-generated QR code
+                if (qrImg && data.qr_code) {
+                    qrImg.src = data.qr_code;
                 }
                 
                 state.paymentId = data.checking_id;

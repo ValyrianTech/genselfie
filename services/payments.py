@@ -1,9 +1,33 @@
 """Payment services for Stripe and LNbits (Lightning Network)."""
 
+import base64
+import io
 from typing import Optional
+
 import httpx
+import qrcode
 
 from config import settings
+
+
+def generate_qr_code_base64(data: str) -> str:
+    """Generate a QR code and return as base64 data URI."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data.upper())
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    
+    b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/png;base64,{b64}"
 
 
 # ============================================================================
@@ -140,11 +164,13 @@ async def create_lightning_invoice(amount_cents: int, currency: str) -> dict:
             
             if response.status_code == 201:
                 data = response.json()
+                payment_request = data.get("payment_request")
                 return {
-                    "payment_request": data.get("payment_request"),
+                    "payment_request": payment_request,
                     "payment_hash": data.get("payment_hash"),
                     "checking_id": data.get("checking_id"),
-                    "amount_sats": amount_sats
+                    "amount_sats": amount_sats,
+                    "qr_code": generate_qr_code_base64(payment_request) if payment_request else None
                 }
             else:
                 return {"error": f"LNbits error: {response.status_code}"}

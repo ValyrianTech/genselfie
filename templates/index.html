@@ -2,7 +2,6 @@
 
 {% block head %}
 <script src="https://js.stripe.com/v3/"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 {% endblock %}
 
 {% block body %}
@@ -172,7 +171,7 @@
                     <h4>Pay with Bitcoin Lightning</h4>
                     <button type="button" class="btn btn-primary" id="pay-lightning">Generate Invoice</button>
                     <div id="lightning-invoice" style="display: none;">
-                        <div id="lightning-qr"></div>
+                        <img id="lightning-qr" src="" alt="Lightning Invoice QR Code">
                         <input type="text" id="lightning-request" readonly>
                         <button type="button" class="btn btn-secondary" id="copy-invoice">Copy</button>
                     </div>

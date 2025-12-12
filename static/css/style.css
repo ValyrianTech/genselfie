@@ -517,13 +517,7 @@ body {
 #lightning-qr {
     display: block;
     border-radius: 8px;
-    background: #ffffff;
-    padding: 8px;
-}
-
-#lightning-qr img,
-#lightning-qr canvas {
-    display: block;
+    max-width: 256px;
 }
 
 #lightning-request {
