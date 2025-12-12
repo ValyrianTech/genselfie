@@ -503,6 +503,35 @@ body {
     margin-bottom: 16px;
 }
 
+#lightning-invoice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: 12px;
+}
+
+#lightning-qr {
+    display: block;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 8px;
+}
+
+#lightning-request {
+    width: 100%;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+#lightning-invoice .btn {
+    width: 100%;
+}
+
 /* Result */
 .result-container {
     text-align: center;
