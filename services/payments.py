@@ -18,7 +18,7 @@ def generate_qr_code_base64(data: str) -> str:
         box_size=10,
         border=4,
     )
-    qr.add_data(data.upper())
+    qr.add_data(data)
     qr.make(fit=True)
     
     img = qr.make_image(fill_color="black", back_color="white")
