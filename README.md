@@ -2,7 +2,7 @@
 
 [![Deploy to GitHub Pages](https://github.com/valyriantech/GenSelfie/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/valyriantech/GenSelfie/actions/workflows/deploy-pages.yml)
 
-**[📖 View the Full Setup Guide →](https://valyriantech.github.io/GenSelfie/)**
+**[📖 View the Full Setup Guide →](https://valyriantech.github.io/genselfie/)**
 
 A web application that allows influencers to let their fans generate AI selfies with them. Fans can upload a photo or fetch their profile picture from social media, pay via promo code or payment, and receive an AI-generated selfie with the influencer.
 
