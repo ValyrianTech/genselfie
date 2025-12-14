@@ -164,7 +164,8 @@ async def create_lightning_invoice(amount_cents: int, currency: str) -> dict:
             
             if response.status_code == 201:
                 data = response.json()
-                payment_request = data.get("payment_request")
+                # Handle both old ("payment_request") and new ("bolt11") LNbits API formats
+                payment_request = data.get("payment_request") or data.get("bolt11")
                 return {
                     "payment_request": payment_request,
                     "payment_hash": data.get("payment_hash"),
