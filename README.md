@@ -37,7 +37,7 @@ Deploy on RunPod:
    - Create an access token at [Hugging Face Settings](https://huggingface.co/settings/tokens)
 
 2. **Deploy the ComfyUI pod**:
-   - Click this link to deploy: [Deploy ComfyUI on RunPod](https://console.runpod.io/deploy?template=rzg5z3pls5&ref=2vdt3dn9)
+   - Click this link to deploy: [Deploy ComfyUI on RunPod](https://console.runpod.io/deploy?template=aomdggbx0y&ref=2vdt3dn9)
    - Select an **RTX PRO 6000** GPU (or equivalent with sufficient VRAM)
    - Set your Hugging Face token in the pod's environment variables as `HF_TOKEN`
 

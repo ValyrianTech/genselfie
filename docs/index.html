@@ -583,9 +583,9 @@
 
         .pricing-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 24px;
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
@@ -599,22 +599,13 @@
             transition: all 0.3s;
         }
 
-        .pricing-card.featured {
-            border-color: var(--primary);
-            transform: scale(1.02);
+        .pricing-card {
+            display: flex;
+            flex-direction: column;
         }
 
-        .pricing-card.featured::before {
-            content: 'Recommended';
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gradient);
-            padding: 6px 20px;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
+        .pricing-card.featured {
+            border-color: var(--border);
         }
 
         .pricing-card:hover {
@@ -649,6 +640,7 @@
             list-style: none;
             text-align: left;
             margin-bottom: 32px;
+            flex: 1;
         }
 
         .pricing-features li {
@@ -1115,12 +1107,14 @@
                         <h4>Create an Access Token</h4>
                         <ol>
                             <li>Go to <a href="https://huggingface.co/settings/tokens" target="_blank">Hugging Face Settings → Tokens</a></li>
-                            <li>Click "New token"</li>
+                            <li>Click "Create new token"</li>
+                            <li>Select "Fine-grained" as the token type</li>
                             <li>Give it a name like "GenSelfie"</li>
-                            <li>Select "Read" access</li>
-                            <li>Click "Generate token"</li>
+                            <li>Under "Repositories", check <strong>"Read access to contents of all public gated repos you can access"</strong></li>
+                            <li>Click "Create token"</li>
                             <li><strong>Copy and save this token</strong> — you'll need it in the next step!</li>
                         </ol>
+                        <img src="https://raw.githubusercontent.com/ValyrianTech/ComfyUI_with_Flux/main/comfyui-without-flux/ai-toolkit/images/huggingface_token.png" alt="Hugging Face token permissions" style="max-width: 100%; border-radius: 12px; margin: 16px 0; border: 1px solid var(--border);">
 
                         <div class="info-box warning">
                             <div class="info-box-title">⚠️ Important</div>
@@ -1145,8 +1139,8 @@
                         
                         <h4>Deploy on RunPod</h4>
                         <ol>
-                            <li>Click this link to deploy: <a href="https://console.runpod.io/deploy?template=rzg5z3pls5&ref=2vdt3dn9" target="_blank">Deploy ComfyUI on RunPod</a></li>
-                            <li>Select an <strong>RTX PRO 6000</strong> GPU (or equivalent with 48GB+ VRAM)</li>
+                            <li>Click this link to deploy: <a href="https://console.runpod.io/deploy?template=aomdggbx0y&ref=2vdt3dn9" target="_blank">Deploy ComfyUI on RunPod</a></li>
+                            <li>Select an <strong>RTX PRO 6000</strong> GPU (or equivalent with 96GB+ VRAM)</li>
                             <li>Under "Environment Variables", add your Hugging Face token:
                                 <div class="code-block">
                                     <code><span class="code-keyword">HF_TOKEN</span>=<span class="code-string">your_token_here</span></code>
@@ -1177,7 +1171,7 @@
 
                         <div class="info-box">
                             <div class="info-box-title">💡 Why RTX PRO 6000?</div>
-                            <p>FLUX.2 requires a lot of GPU memory (VRAM). The RTX PRO 6000 has 48GB, which is enough to run the model smoothly. Smaller GPUs may not work.</p>
+                            <p>FLUX.2 requires a lot of GPU memory (VRAM). The RTX PRO 6000 has 96GB, which is enough to run the model smoothly. Smaller GPUs may not work.</p>
                         </div>
                     </div>
                 </div>
@@ -1328,7 +1322,7 @@
             </div>
             <div class="pricing-cards">
                 <div class="pricing-card">
-                    <h3>GenSelfie App</h3>
+                    <h3>Self-Hosted GenSelfie</h3>
                     <div class="price">$0<span>/forever</span></div>
                     <p class="price-note">Open source, self-hosted</p>
                     <ul class="pricing-features">
@@ -1340,18 +1334,31 @@
                     </ul>
                     <a href="https://github.com/valyriantech/GenSelfie" target="_blank" class="btn btn-secondary" style="width: 100%;">View on GitHub</a>
                 </div>
-                <div class="pricing-card featured">
+                <div class="pricing-card">
+                    <h3>GenSelfie on RunPod</h3>
+                    <div class="price">~$0.06<span>/hour</span></div>
+                    <p class="price-note">CPU Pod (web app only)</p>
+                    <ul class="pricing-features">
+                        <li>Cheapest hosting option</li>
+                        <li>Easy one-click deploy</li>
+                        <li>No server management</li>
+                        <li>Same RunPod account as GPU</li>
+                        <li>~$44/month if running 24/7</li>
+                    </ul>
+                    <a href="https://runpod.io?ref=2vdt3dn9" target="_blank" class="btn btn-secondary" style="width: 100%;">Deploy on RunPod</a>
+                </div>
+                <div class="pricing-card">
                     <h3>RunPod GPU</h3>
                     <div class="price">~$1.84<span>/hour</span></div>
-                    <p class="price-note">RTX PRO 6000 (48GB VRAM)</p>
+                    <p class="price-note">RTX PRO 6000 (96GB VRAM)</p>
                     <ul class="pricing-features">
+                        <li>Required for AI generation</li>
+                        <li>~1 minute per image (1024×1024)</li>
                         <li>Pay only when running</li>
-                        <li>~30 seconds per image</li>
                         <li>Stop anytime to save costs</li>
-                        <li>Network storage included</li>
-                        <li>Easy scaling</li>
+                        <li>Network storage available (extra)</li>
                     </ul>
-                    <a href="https://runpod.io?ref=2vdt3dn9" target="_blank" class="btn btn-primary" style="width: 100%;">Get Started</a>
+                    <a href="https://console.runpod.io/deploy?template=aomdggbx0y&ref=2vdt3dn9" target="_blank" class="btn btn-primary" style="width: 100%;">Get Started</a>
                 </div>
             </div>
         </div>
@@ -1371,11 +1378,11 @@
                 </div>
                 <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">How much does it cost per selfie?</div>
-                    <div class="faq-answer">With an RTX PRO 6000 at ~$1.84/hour and each image taking about 30 seconds, each selfie costs roughly $0.02-0.03 in GPU time. You set your own prices for fans — most creators charge $1-10 per selfie.</div>
+                    <div class="faq-answer">With an RTX PRO 6000 at ~$1.84/hour and each image taking about 1 minute (at 1024×1024), each selfie costs roughly $0.03 in GPU time. You set your own prices for fans — most creators charge $1-10 per selfie.</div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">Can I use a cheaper GPU?</div>
-                    <div class="faq-answer">FLUX.2 requires significant GPU memory (VRAM). The RTX PRO 6000 with 48GB is recommended. Smaller GPUs like the RTX 4090 (24GB) may work with optimizations but aren't officially supported.</div>
+                    <div class="faq-answer">FLUX.2 requires significant GPU memory (VRAM). The RTX PRO 6000 with 96GB is required to run the model properly.</div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">How do I accept payments?</div>
@@ -1395,7 +1402,7 @@
                 </div>
                 <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">Can I run this 24/7?</div>
-                    <div class="faq-answer">Yes, but it will cost more. At ~$1/hour, running 24/7 would cost ~$720/month. Most creators start the GPU when they expect traffic and stop it when not in use. You can also set up auto-scaling.</div>
+                    <div class="faq-answer">Yes, but it will cost more. At ~$1.84/hour, running 24/7 would cost ~$1,325/month. Most creators start the GPU when they expect traffic and stop it when not in use.</div>
                 </div>
             </div>
         </div>
