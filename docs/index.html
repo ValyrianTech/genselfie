@@ -1160,11 +1160,24 @@
                             <li>Wait for the download to complete (this can take 10-20 minutes)</li>
                         </ol>
 
+                        <h4>Test Your Setup</h4>
+                        <ol>
+                            <li>Open the ComfyUI interface (click "Connect" → "HTTP Service [Port 8188]")</li>
+                            <li>Run a test image generation using the default FLUX.2 workflow</li>
+                            <li>This loads the models into memory, making future generations faster</li>
+                            <li>If the test image generates successfully, everything is working!</li>
+                        </ol>
+
+                        <div class="info-box">
+                            <div class="info-box-title">💡 Tip</div>
+                            <p>The first generation takes longer because the models need to load into GPU memory. Subsequent generations will be much faster.</p>
+                        </div>
+
                         <h4>Get Your ComfyUI URL</h4>
                         <ol>
                             <li>In RunPod, click "Connect" on your pod</li>
                             <li>Look for "TCP Port Mappings" (NOT the proxy URL)</li>
-                            <li>Find the port mapped to <strong>8080</strong></li>
+                            <li>Find the port mapped to <strong>8188</strong></li>
                             <li>Copy the full address (looks like: <code>123.45.67.89:12345</code>)</li>
                             <li>Save this — you'll need it for GenSelfie!</li>
                         </ol>
