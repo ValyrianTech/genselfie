@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenSelfie - AI Selfie Generator for Influencers</title>
+    <meta name="description" content="Let your fans generate AI selfies with you. Easy to set up, multiple payment options, powered by FLUX.2 AI.">
+    <meta name="keywords" content="AI selfie, influencer, fan engagement, AI photo generator, FLUX.2">
+    <meta property="og:title" content="GenSelfie - AI Selfie Generator for Influencers">
+    <meta property="og:description" content="Let your fans generate AI selfies with you. Easy to set up, multiple payment options.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #f472b6;
+            --bg-dark: #0f0f0f;
+            --bg-card: #1a1a1a;
+            --bg-card-hover: #222;
+            --text: #ffffff;
+            --text-muted: #a0a0a0;
+            --text-dim: #666;
+            --border: #333;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(15, 15, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .nav-cta {
+            background: var(--gradient);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .mobile-menu {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-20px, 20px) rotate(5deg); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 24px;
+        }
+
+        .hero-badge::before {
+            content: '✨';
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+        }
+
+        /* Section Styles */
+        section {
+            padding: 100px 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .section-header h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Features Section */
+        #features {
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-card) 100%);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--gradient);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* How It Works */
+        #how-it-works {
+            background: var(--bg-card);
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+
+        .step {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 40px;
+            align-items: center;
+            min-height: 200px;
+        }
+
+        .step:nth-child(odd) .step-content {
+            text-align: right;
+        }
+
+        .step:nth-child(even) .step-content {
+            grid-column: 3;
+            text-align: left;
+        }
+
+        .step:nth-child(even) .step-number {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .step:nth-child(even)::before {
+            content: '';
+            grid-column: 1;
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step:not(:last-child) .step-number::after {
+            content: '';
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 120px;
+            background: linear-gradient(180deg, var(--primary), transparent);
+        }
+
+        .step-content h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* Setup Guide */
+        #setup {
+            background: var(--bg-dark);
+        }
+
+        .setup-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .setup-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .setup-step-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 24px 32px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .setup-step-header:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .setup-step-number {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .setup-step-title {
+            flex: 1;
+        }
+
+        .setup-step-title h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .setup-step-title p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .setup-step-toggle {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-dark);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        .setup-step.active .setup-step-toggle {
+            transform: rotate(180deg);
+            color: var(--primary);
+        }
+
+        .setup-step-content {
+            display: none;
+            padding: 0 32px 32px;
+            border-top: 1px solid var(--border);
+        }
+
+        .setup-step.active .setup-step-content {
+            display: block;
+        }
+
+        .setup-step-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 24px 0 12px;
+            color: var(--primary);
+        }
+
+        .setup-step-content h4:first-child {
+            margin-top: 24px;
+        }
+
+        .setup-step-content p {
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .setup-step-content ul,
+        .setup-step-content ol {
+            color: var(--text-muted);
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .setup-step-content li {
+            margin-bottom: 8px;
+        }
+
+        .setup-step-content a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .setup-step-content a:hover {
+            text-decoration: underline;
+        }
+
+        .code-block {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 16px 0;
+            overflow-x: auto;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .code-block code {
+            color: var(--text);
+        }
+
+        .code-comment {
+            color: var(--text-dim);
+        }
+
+        .code-string {
+            color: var(--success);
+        }
+
+        .code-keyword {
+            color: var(--accent);
+        }
+
+        .info-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 16px 0;
+        }
+
+        .info-box.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .info-box-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Pricing */
+        #pricing {
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-card) 100%);
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .pricing-card.featured::before {
+            content: 'Recommended';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient);
+            padding: 6px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary);
+        }
+
+        .pricing-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .pricing-card .price {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 20px 0;
+        }
+
+        .pricing-card .price span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .pricing-card .price-note {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .pricing-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 32px;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* FAQ */
+        #faq {
+            background: var(--bg-card);
+        }
+
+        .faq-list {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .faq-question::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: var(--primary);
+            transition: transform 0.3s;
+        }
+
+        .faq-item.active .faq-question::after {
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            display: none;
+            padding-bottom: 24px;
+            color: var(--text-muted);
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        /* CTA Section */
+        #cta {
+            background: var(--bg-dark);
+            text-align: center;
+        }
+
+        .cta-box {
+            background: var(--gradient);
+            border-radius: 32px;
+            padding: 80px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .cta-box h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .cta-box p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .cta-box .btn {
+            position: relative;
+            background: white;
+            color: var(--primary-dark);
+        }
+
+        .cta-box .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 60px 24px 40px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-brand .logo {
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            max-width: 300px;
+        }
+
+        .footer-links h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--text);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 40px auto 0;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer-bottom a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .step {
+                grid-template-columns: 60px 1fr;
+                gap: 24px;
+            }
+
+            .step .step-content,
+            .step:nth-child(even) .step-content {
+                grid-column: 2;
+                text-align: left;
+            }
+
+            .step .step-number,
+            .step:nth-child(even) .step-number {
+                grid-column: 1;
+            }
+
+            .step:nth-child(even)::before {
+                display: none;
+            }
+
+            .step-number {
+                width: 60px;
+                height: 60px;
+                font-size: 1.25rem;
+            }
+
+            .step:not(:last-child) .step-number::after {
+                height: 100px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu {
+                display: block;
+            }
+
+            .hero {
+                padding: 100px 20px 60px;
+            }
+
+            section {
+                padding: 60px 20px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .footer-brand {
+                grid-column: 1 / -1;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .setup-step-header {
+                padding: 20px;
+            }
+
+            .setup-step-content {
+                padding: 0 20px 24px;
+            }
+
+            .pricing-card.featured {
+                transform: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-box {
+                padding: 50px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">GenSelfie</a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#setup">Setup Guide</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+            <a href="https://github.com/valyriantech/GenSelfie" target="_blank" class="nav-cta">Get Started</a>
+            <button class="mobile-menu" onclick="toggleMobileMenu()">☰</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">Powered by FLUX.2 AI</div>
+            <h1>Let Your Fans Take <span>AI Selfies</span> With You</h1>
+            <p>Create a personalized selfie generator for your fans. They upload their photo, pay with crypto or card, and get an AI-generated selfie with you in seconds.</p>
+            <div class="hero-buttons">
+                <a href="#setup" class="btn btn-primary">
+                    <span>📖</span> Setup Guide
+                </a>
+                <a href="https://github.com/valyriantech/GenSelfie" target="_blank" class="btn btn-secondary">
+                    <span>⭐</span> View on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Features</span>
+                <h2>Everything You Need to Engage Your Fans</h2>
+                <p>A complete solution for influencers who want to offer unique, personalized experiences to their audience.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Multiple Presets</h3>
+                    <p>Create different styles and scenes for your selfies. Set custom prompts, dimensions, and pricing for each preset.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💳</div>
+                    <h3>Flexible Payments</h3>
+                    <p>Accept payments via Stripe (credit cards), Bitcoin Lightning, or promo codes. You choose what works for you.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Social Media Integration</h3>
+                    <p>Fans can fetch their profile picture from Twitter, Bluesky, GitHub, Mastodon, or Nostr with one click.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎛️</div>
+                    <h3>Easy Admin Panel</h3>
+                    <p>Manage everything from a simple dashboard. Upload images, create presets, manage codes, and track generations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>Example Gallery</h3>
+                    <p>Showcase example selfies to your fans. Generate examples automatically from your admin panel.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Custom Branding</h3>
+                    <p>Upload your logo, banner, and customize colors to match your personal brand perfectly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">How It Works</span>
+                <h2>Simple for You, Fun for Your Fans</h2>
+                <p>Here's what the experience looks like for your fans.</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-content">
+                        <h3>Choose a Style</h3>
+                        <p>Fans pick from your custom presets — maybe a red carpet photo, a casual selfie, or something creative you've designed.</p>
+                    </div>
+                    <div class="step-number">1</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Upload Their Photo</h3>
+                        <p>They can upload a photo directly or fetch their profile picture from their favorite social media platform.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-content">
+                        <h3>Pay & Generate</h3>
+                        <p>After payment (or using a promo code), the AI generates their personalized selfie with you in seconds.</p>
+                    </div>
+                    <div class="step-number">3</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Download & Share</h3>
+                        <p>They download their unique selfie and share it on social media — free promotion for you!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Setup Guide -->
+    <section id="setup">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Setup Guide</span>
+                <h2>Get Started in 5 Steps</h2>
+                <p>Don't worry if you're not technical — we'll walk you through everything step by step.</p>
+            </div>
+            <div class="setup-steps">
+                <!-- Step 1: RunPod Account -->
+                <div class="setup-step active">
+                    <div class="setup-step-header" onclick="toggleStep(this)">
+                        <div class="setup-step-number">1</div>
+                        <div class="setup-step-title">
+                            <h3>Create a RunPod Account</h3>
+                            <p>RunPod provides the GPU power needed for AI image generation</p>
+                        </div>
+                        <div class="setup-step-toggle">▼</div>
+                    </div>
+                    <div class="setup-step-content">
+                        <h4>What is RunPod?</h4>
+                        <p>RunPod is a cloud service that rents out powerful graphics cards (GPUs). These GPUs are needed to run the AI that generates the selfies. Think of it like renting a super-powerful computer in the cloud.</p>
+                        
+                        <h4>Create Your Account</h4>
+                        <ol>
+                            <li>Go to <a href="https://runpod.io?ref=2vdt3dn9" target="_blank">runpod.io</a></li>
+                            <li>Click "Sign Up" in the top right corner</li>
+                            <li>Create an account using your email or Google/GitHub</li>
+                            <li>Add a payment method (credit card or crypto)</li>
+                            <li>Add some credits to your account ($25-50 is a good start)</li>
+                        </ol>
+
+                        <div class="info-box">
+                            <div class="info-box-title">💡 Tip</div>
+                            <p>RunPod charges by the hour while your GPU is running. An RTX PRO 6000 costs around $0.99/hour. You can stop the pod when not in use to save money.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Hugging Face -->
+                <div class="setup-step">
+                    <div class="setup-step-header" onclick="toggleStep(this)">
+                        <div class="setup-step-number">2</div>
+                        <div class="setup-step-title">
+                            <h3>Get Hugging Face Access</h3>
+                            <p>Required to download the FLUX.2 AI model</p>
+                        </div>
+                        <div class="setup-step-toggle">▼</div>
+                    </div>
+                    <div class="setup-step-content">
+                        <h4>What is Hugging Face?</h4>
+                        <p>Hugging Face is like a library for AI models. The FLUX.2 model we use is hosted there, and you need an account to download it.</p>
+                        
+                        <h4>Get Access to FLUX.2</h4>
+                        <ol>
+                            <li>Go to <a href="https://huggingface.co" target="_blank">huggingface.co</a> and create a free account</li>
+                            <li>Visit the <a href="https://huggingface.co/black-forest-labs/FLUX.2-dev" target="_blank">FLUX.2-dev model page</a></li>
+                            <li>Click "Agree and access repository" to request access</li>
+                            <li>Wait for approval (usually instant, but can take a few hours)</li>
+                        </ol>
+
+                        <h4>Create an Access Token</h4>
+                        <ol>
+                            <li>Go to <a href="https://huggingface.co/settings/tokens" target="_blank">Hugging Face Settings → Tokens</a></li>
+                            <li>Click "New token"</li>
+                            <li>Give it a name like "GenSelfie"</li>
+                            <li>Select "Read" access</li>
+                            <li>Click "Generate token"</li>
+                            <li><strong>Copy and save this token</strong> — you'll need it in the next step!</li>
+                        </ol>
+
+                        <div class="info-box warning">
+                            <div class="info-box-title">⚠️ Important</div>
+                            <p>Keep your token secret! Anyone with this token can access your Hugging Face account. Never share it publicly.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Deploy ComfyUI -->
+                <div class="setup-step">
+                    <div class="setup-step-header" onclick="toggleStep(this)">
+                        <div class="setup-step-number">3</div>
+                        <div class="setup-step-title">
+                            <h3>Deploy the ComfyUI Server</h3>
+                            <p>This is the AI engine that generates the selfies</p>
+                        </div>
+                        <div class="setup-step-toggle">▼</div>
+                    </div>
+                    <div class="setup-step-content">
+                        <h4>What is ComfyUI?</h4>
+                        <p>ComfyUI is the software that runs the AI model. We've prepared a special version that's ready to use with GenSelfie.</p>
+                        
+                        <h4>Deploy on RunPod</h4>
+                        <ol>
+                            <li>Click this link to deploy: <a href="https://console.runpod.io/deploy?template=rzg5z3pls5&ref=2vdt3dn9" target="_blank">Deploy ComfyUI on RunPod</a></li>
+                            <li>Select an <strong>RTX PRO 6000</strong> GPU (or equivalent with 48GB+ VRAM)</li>
+                            <li>Under "Environment Variables", add your Hugging Face token:
+                                <div class="code-block">
+                                    <code><span class="code-keyword">HF_TOKEN</span>=<span class="code-string">your_token_here</span></code>
+                                </div>
+                            </li>
+                            <li>Click "Deploy" and wait for the pod to start (this takes a few minutes)</li>
+                        </ol>
+
+                        <h4>Download the FLUX.2 Models</h4>
+                        <ol>
+                            <li>Once the pod is running, click "Connect" → "Web Terminal"</li>
+                            <li>In the terminal, run this command:
+                                <div class="code-block">
+                                    <code>bash /download_Flux2.sh</code>
+                                </div>
+                            </li>
+                            <li>Wait for the download to complete (this can take 10-20 minutes)</li>
+                        </ol>
+
+                        <h4>Get Your ComfyUI URL</h4>
+                        <ol>
+                            <li>In RunPod, click "Connect" on your pod</li>
+                            <li>Look for "TCP Port Mappings" (NOT the proxy URL)</li>
+                            <li>Find the port mapped to <strong>8080</strong></li>
+                            <li>Copy the full address (looks like: <code>123.45.67.89:12345</code>)</li>
+                            <li>Save this — you'll need it for GenSelfie!</li>
+                        </ol>
+
+                        <div class="info-box">
+                            <div class="info-box-title">💡 Why RTX PRO 6000?</div>
+                            <p>FLUX.2 requires a lot of GPU memory (VRAM). The RTX PRO 6000 has 48GB, which is enough to run the model smoothly. Smaller GPUs may not work.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Deploy GenSelfie -->
+                <div class="setup-step">
+                    <div class="setup-step-header" onclick="toggleStep(this)">
+                        <div class="setup-step-number">4</div>
+                        <div class="setup-step-title">
+                            <h3>Deploy GenSelfie</h3>
+                            <p>Set up the web app your fans will use</p>
+                        </div>
+                        <div class="setup-step-toggle">▼</div>
+                    </div>
+                    <div class="setup-step-content">
+                        <h4>Option A: Deploy on RunPod (Easiest)</h4>
+                        <p>You can run GenSelfie on the same RunPod account, on a cheaper CPU-only pod.</p>
+                        <ol>
+                            <li>In RunPod, go to "Pods" → "Deploy"</li>
+                            <li>Search for "GenSelfie" template, or use the Docker image:
+                                <div class="code-block">
+                                    <code>valyriantech/genselfie:latest</code>
+                                </div>
+                            </li>
+                            <li>Select a cheap CPU pod (no GPU needed for the web app)</li>
+                            <li>Add environment variables:
+                                <div class="code-block">
+                                    <code><span class="code-keyword">COMFYUI_URL</span>=<span class="code-string">http://your-comfyui-ip:port</span></code>
+                                </div>
+                            </li>
+                            <li>Deploy and wait for it to start</li>
+                        </ol>
+
+                        <h4>Option B: Run Locally or on Any Server</h4>
+                        <ol>
+                            <li>Make sure you have Python 3.12+ installed</li>
+                            <li>Clone the repository:
+                                <div class="code-block">
+                                    <code>git clone https://github.com/valyriantech/GenSelfie.git<br>cd GenSelfie</code>
+                                </div>
+                            </li>
+                            <li>Install dependencies:
+                                <div class="code-block">
+                                    <code>pip install -r requirements.txt</code>
+                                </div>
+                            </li>
+                            <li>Create your configuration:
+                                <div class="code-block">
+                                    <code>cp .env.example .env</code>
+                                </div>
+                            </li>
+                            <li>Edit <code>.env</code> and add your ComfyUI URL</li>
+                            <li>Run the app:
+                                <div class="code-block">
+                                    <code>python main.py</code>
+                                </div>
+                            </li>
+                        </ol>
+
+                        <h4>First Login</h4>
+                        <p>When you first run GenSelfie, it automatically generates an admin password. Check the console output or your <code>.env</code> file for the password.</p>
+                        <ol>
+                            <li>Open your GenSelfie URL in a browser</li>
+                            <li>Go to <code>/admin</code></li>
+                            <li>Enter the generated password</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Step 5: Configure -->
+                <div class="setup-step">
+                    <div class="setup-step-header" onclick="toggleStep(this)">
+                        <div class="setup-step-number">5</div>
+                        <div class="setup-step-title">
+                            <h3>Configure Your App</h3>
+                            <p>Add your branding, images, and create presets</p>
+                        </div>
+                        <div class="setup-step-toggle">▼</div>
+                    </div>
+                    <div class="setup-step-content">
+                        <h4>Set Up Your Branding</h4>
+                        <ol>
+                            <li>In the admin panel, go to "App Settings"</li>
+                            <li>Enter your app name and tagline</li>
+                            <li>Choose your brand colors</li>
+                            <li>Upload your logo and banner image</li>
+                            <li>Click "Save Settings"</li>
+                        </ol>
+
+                        <h4>Add Your Reference Images</h4>
+                        <p>These are photos of you that the AI will use to generate selfies.</p>
+                        <ol>
+                            <li>Go to "Influencer Reference Images"</li>
+                            <li>Upload 1-5 high-quality photos of yourself</li>
+                            <li>Use clear, well-lit photos with your face visible</li>
+                        </ol>
+
+                        <div class="info-box">
+                            <div class="info-box-title">📸 Photo Tips</div>
+                            <p>Use photos with good lighting, clear facial features, and minimal background distractions. The AI works best with high-quality source images.</p>
+                        </div>
+
+                        <h4>Create Your First Preset</h4>
+                        <ol>
+                            <li>Go to "Generation Presets"</li>
+                            <li>Click "Create New Preset"</li>
+                            <li>Enter a name (e.g., "Red Carpet Selfie")</li>
+                            <li>Select which reference image to use</li>
+                            <li>Set the dimensions (1024x1024 is a good default)</li>
+                            <li>Write a prompt describing the scene</li>
+                            <li>Set your price (in cents, so $5 = 500)</li>
+                            <li>Click "Create Preset"</li>
+                        </ol>
+
+                        <h4>Set Up Payments (Optional)</h4>
+                        <p>You can enable promo codes, Stripe (credit cards), or Lightning (Bitcoin).</p>
+                        <ul>
+                            <li><strong>Promo Codes:</strong> Enabled by default. Create codes in the admin panel.</li>
+                            <li><strong>Stripe:</strong> Add your Stripe API keys to <code>.env</code></li>
+                            <li><strong>Lightning:</strong> Add your LNbits URL and API key to <code>.env</code></li>
+                        </ul>
+
+                        <h4>Generate Example Images</h4>
+                        <ol>
+                            <li>Upload some example input images (celebrity photos work great)</li>
+                            <li>Select a preset and click "Generate All Examples"</li>
+                            <li>Wait for the AI to generate examples</li>
+                            <li>These will appear in the gallery on your fan page</li>
+                        </ol>
+
+                        <div class="info-box">
+                            <div class="info-box-title">🎉 You're Done!</div>
+                            <p>Share your GenSelfie URL with your fans and start generating selfies! Consider creating a promo code for your first few fans to test it out.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Costs</span>
+                <h2>What Does It Cost to Run?</h2>
+                <p>GenSelfie is free and open source. You only pay for the cloud GPU.</p>
+            </div>
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>GenSelfie App</h3>
+                    <div class="price">$0<span>/forever</span></div>
+                    <p class="price-note">Open source, self-hosted</p>
+                    <ul class="pricing-features">
+                        <li>Full source code access</li>
+                        <li>Unlimited generations</li>
+                        <li>All features included</li>
+                        <li>No monthly fees</li>
+                        <li>Community support</li>
+                    </ul>
+                    <a href="https://github.com/valyriantech/GenSelfie" target="_blank" class="btn btn-secondary" style="width: 100%;">View on GitHub</a>
+                </div>
+                <div class="pricing-card featured">
+                    <h3>RunPod GPU</h3>
+                    <div class="price">~$1<span>/hour</span></div>
+                    <p class="price-note">RTX PRO 6000 (48GB VRAM)</p>
+                    <ul class="pricing-features">
+                        <li>Pay only when running</li>
+                        <li>~30 seconds per image</li>
+                        <li>Stop anytime to save costs</li>
+                        <li>Network storage included</li>
+                        <li>Easy scaling</li>
+                    </ul>
+                    <a href="https://runpod.io?ref=2vdt3dn9" target="_blank" class="btn btn-primary" style="width: 100%;">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">FAQ</span>
+                <h2>Frequently Asked Questions</h2>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">Do I need to know how to code?</div>
+                    <div class="faq-answer">No! While GenSelfie is a technical product, we've designed the setup process to be as simple as possible. If you can follow step-by-step instructions and click buttons, you can set this up. The admin panel is completely visual — no coding required.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">How much does it cost per selfie?</div>
+                    <div class="faq-answer">With an RTX PRO 6000 at ~$1/hour and each image taking about 30 seconds, each selfie costs roughly $0.01-0.02 in GPU time. You set your own prices for fans — most creators charge $1-10 per selfie.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">Can I use a cheaper GPU?</div>
+                    <div class="faq-answer">FLUX.2 requires significant GPU memory (VRAM). The RTX PRO 6000 with 48GB is recommended. Smaller GPUs like the RTX 4090 (24GB) may work with optimizations but aren't officially supported.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">How do I accept payments?</div>
+                    <div class="faq-answer">GenSelfie supports three payment methods: Promo codes (free, built-in), Stripe (credit cards, requires a Stripe account), and Bitcoin Lightning (via LNbits). You can enable any combination of these.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">Is the AI quality good?</div>
+                    <div class="faq-answer">GenSelfie uses FLUX.2, one of the most advanced image generation models available. The quality is excellent, especially with good reference photos. Results look natural and realistic.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">Can I customize the AI prompts?</div>
+                    <div class="faq-answer">Yes! Each preset can have its own custom prompt. You can also optionally allow fans to modify the prompt for more creative control. The default workflow places both people on a red carpet, but you can customize this.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">What if I need help?</div>
+                    <div class="faq-answer">GenSelfie is open source, so you can ask questions on our GitHub repository. The community and maintainers are happy to help with setup issues.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">Can I run this 24/7?</div>
+                    <div class="faq-answer">Yes, but it will cost more. At ~$1/hour, running 24/7 would cost ~$720/month. Most creators start the GPU when they expect traffic and stop it when not in use. You can also set up auto-scaling.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="cta">
+        <div class="container">
+            <div class="cta-box">
+                <h2>Ready to Engage Your Fans?</h2>
+                <p>GenSelfie is free and open source. Get started today!</p>
+                <a href="https://github.com/valyriantech/GenSelfie" target="_blank" class="btn">
+                    <span>🚀</span> Get Started on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <a href="#" class="logo">GenSelfie</a>
+                <p>An open source AI selfie generator for influencers. Let your fans create personalized selfies with you.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#setup">Setup Guide</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                    <li><a href="https://github.com/valyriantech/GenSelfie" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Links</h4>
+                <ul>
+                    <li><a href="https://runpod.io?ref=2vdt3dn9" target="_blank">RunPod</a></li>
+                    <li><a href="https://huggingface.co" target="_blank">Hugging Face</a></li>
+                    <li><a href="https://linktr.ee/ValyrianTech" target="_blank">ValyrianTech</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 GenSelfie. Open source under MIT License.</p>
+            <p>Made with ❤️ by <a href="https://linktr.ee/ValyrianTech" target="_blank">ValyrianTech</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Toggle setup steps
+        function toggleStep(header) {
+            const step = header.parentElement;
+            const wasActive = step.classList.contains('active');
+            
+            // Close all steps
+            document.querySelectorAll('.setup-step').forEach(s => {
+                s.classList.remove('active');
+            });
+            
+            // Open clicked step if it wasn't active
+            if (!wasActive) {
+                step.classList.add('active');
+            }
+        }
+
+        // Toggle FAQ items
+        function toggleFaq(question) {
+            const item = question.parentElement;
+            item.classList.toggle('active');
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Navbar background on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(15, 15, 15, 0.98)';
+            } else {
+                nav.style.background = 'rgba(15, 15, 15, 0.9)';
+            }
+        });
+    </script>
+</body>
+</html>
