@@ -278,6 +278,9 @@ async def generate(
             f.write(content)
         fan_image_url = f"/uploads/{filename}"
         fan_image_path = str(filepath)
+        # Override platform/handle for uploaded images
+        platform = "upload"
+        handle = None
     elif platform and handle:
         fan_image_url = await fetch_profile_image(platform, handle)
         fan_image_path = fan_image_url  # URL for social media images

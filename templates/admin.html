@@ -138,37 +138,104 @@
                 {% for preset in presets %}
                 <div class="preset-card {% if not preset.is_active %}preset-inactive{% endif %}">
                     <div class="preset-header">
-                        <h3>{{ preset.name }}</h3>
-                        <span class="badge {% if preset.is_active %}badge-success{% else %}badge-muted{% endif %}">
-                            {{ "Active" if preset.is_active else "Inactive" }}
-                        </span>
+                        <h3 class="preset-title" data-preset-id="{{ preset.id }}">{{ preset.name }}</h3>
+                        <div class="preset-header-actions">
+                            <span class="badge {% if preset.is_active %}badge-success{% else %}badge-muted{% endif %}">
+                                {{ "Active" if preset.is_active else "Inactive" }}
+                            </span>
+                            <button type="button" class="btn btn-secondary btn-small edit-preset-btn" data-preset-id="{{ preset.id }}">Edit</button>
+                        </div>
                     </div>
-                    {% if preset.description %}
-                    <p class="preset-description">{{ preset.description }}</p>
-                    {% endif %}
-                    <div class="preset-details">
-                        <span><strong>Size:</strong> {{ preset.width }}x{{ preset.height }}</span>
-                        <span><strong>Image:</strong> {{ image_names.get(preset.influencer_image_id, 'Unknown') }}</span>
-                        <span><strong>Price:</strong> {{ "%.2f"|format(preset.price_cents / 100) }} {{ settings.currency }}</span>
-                        <span><strong>Prompt Edit:</strong> {{ "Yes" if preset.allow_prompt_edit else "No" }}</span>
+                    
+                    <!-- View Mode -->
+                    <div class="preset-view" id="preset-view-{{ preset.id }}">
+                        {% if preset.description %}
+                        <p class="preset-description">{{ preset.description }}</p>
+                        {% endif %}
+                        <div class="preset-details">
+                            <span><strong>Size:</strong> {{ preset.width }}x{{ preset.height }}</span>
+                            <span><strong>Image:</strong> {{ image_names.get(preset.influencer_image_id, 'Unknown') }}</span>
+                            <span><strong>Price:</strong> {{ "%.2f"|format(preset.price_cents / 100) }} {{ settings.currency }}</span>
+                            <span><strong>Prompt Edit:</strong> {{ "Yes" if preset.allow_prompt_edit else "No" }}</span>
+                        </div>
+                        {% if preset.prompt %}
+                        <div class="preset-prompt">
+                            <strong>Prompt:</strong> {{ preset.prompt }}
+                        </div>
+                        {% endif %}
+                        <div class="button-group">
+                            <form method="POST" action="/admin/toggle-preset/{{ preset.id }}" style="display: inline;">
+                                <button type="submit" class="btn btn-secondary btn-small">
+                                    {{ "Disable" if preset.is_active else "Enable" }}
+                                </button>
+                            </form>
+                            <form method="POST" action="/admin/delete-preset/{{ preset.id }}" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                            </form>
+                            <form method="POST" action="/admin/generate-all-examples" style="display: inline;">
+                                <input type="hidden" name="preset_id" value="{{ preset.id }}">
+                                <button type="submit" class="btn btn-primary btn-small">Generate All Examples</button>
+                            </form>
+                        </div>
                     </div>
-                    {% if preset.prompt %}
-                    <div class="preset-prompt">
-                        <strong>Prompt:</strong> {{ preset.prompt }}
-                    </div>
-                    {% endif %}
-                    <div class="button-group">
-                        <form method="POST" action="/admin/toggle-preset/{{ preset.id }}" style="display: inline;">
-                            <button type="submit" class="btn btn-secondary btn-small">
-                                {{ "Disable" if preset.is_active else "Enable" }}
-                            </button>
-                        </form>
-                        <form method="POST" action="/admin/delete-preset/{{ preset.id }}" style="display: inline;">
-                            <button type="submit" class="btn btn-danger btn-small">Delete</button>
-                        </form>
-                        <form method="POST" action="/admin/generate-all-examples" style="display: inline;">
-                            <input type="hidden" name="preset_id" value="{{ preset.id }}">
-                            <button type="submit" class="btn btn-primary btn-small">Generate All Examples</button>
+                    
+                    <!-- Edit Mode -->
+                    <div class="preset-edit" id="preset-edit-{{ preset.id }}" style="display: none;">
+                        <form method="POST" action="/admin/update-preset/{{ preset.id }}" class="preset-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input type="text" name="name" value="{{ preset.name }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Influencer Image</label>
+                                    <select name="influencer_image_id" required>
+                                        {% for image in images %}
+                                        <option value="{{ image.id }}" {% if image.id == preset.influencer_image_id %}selected{% endif %}>{{ image.original_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Width</label>
+                                    <input type="number" name="width" value="{{ preset.width }}" min="256" max="2048">
+                                </div>
+                                <div class="form-group">
+                                    <label>Height</label>
+                                    <input type="number" name="height" value="{{ preset.height }}" min="256" max="2048">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Description (optional)</label>
+                                <input type="text" name="description" value="{{ preset.description or '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Prompt (optional)</label>
+                                <textarea name="prompt" rows="3">{{ preset.prompt or '' }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Price (cents)</label>
+                                <input type="number" name="price_cents" value="{{ preset.price_cents }}" min="0">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="allow_prompt_edit" {% if preset.allow_prompt_edit %}checked{% endif %}>
+                                        <span>Allow fan to edit prompt</span>
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="is_active" {% if preset.is_active %}checked{% endif %}>
+                                        <span>Active</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="button-group">
+                                <button type="submit" class="btn btn-primary btn-small">Save Changes</button>
+                                <button type="button" class="btn btn-secondary btn-small cancel-edit-btn" data-preset-id="{{ preset.id }}">Cancel</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -384,7 +451,51 @@
                 <button type="submit" class="btn btn-primary">Save URL</button>
             </form>
             
-            <p class="help-text" style="margin-top: 16px;">⚠️ Use the direct TCP port mapped to 8080 from RunPod, not the proxy link. Format: <code>xx.xx.xx.xx:xxxxx</code></p>
+            <p class="help-text" style="margin-top: 16px;">⚠️ Use the direct TCP port mapped to 8188 from RunPod, not the proxy link. Format: <code>xx.xx.xx.xx:xxxxx</code></p>
+        </section>
+
+        <!-- Stripe Settings Section -->
+        <section class="admin-section">
+            <h2>Stripe Settings</h2>
+            <p class="help-text">Configure Stripe for credit card payments. Get your API keys from <a href="https://dashboard.stripe.com/apikeys" target="_blank">Stripe Dashboard</a>.</p>
+            
+            <form method="POST" action="/admin/stripe-settings">
+                <div class="form-group">
+                    <label for="stripe_secret_key">Secret Key</label>
+                    <input type="password" id="stripe_secret_key" name="stripe_secret_key" 
+                           value="{{ stripe_secret_key }}" 
+                           placeholder="sk_live_... or sk_test_...">
+                </div>
+                <div class="form-group">
+                    <label for="stripe_publishable_key">Publishable Key</label>
+                    <input type="text" id="stripe_publishable_key" name="stripe_publishable_key" 
+                           value="{{ stripe_publishable_key }}" 
+                           placeholder="pk_live_... or pk_test_...">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Stripe Settings</button>
+            </form>
+        </section>
+
+        <!-- LNbits Settings Section -->
+        <section class="admin-section">
+            <h2>Bitcoin Lightning Settings</h2>
+            <p class="help-text">Configure LNbits for Bitcoin Lightning payments. Get your API key from your LNbits wallet.</p>
+            
+            <form method="POST" action="/admin/lnbits-settings">
+                <div class="form-group">
+                    <label for="lnbits_url">LNbits URL</label>
+                    <input type="text" id="lnbits_url" name="lnbits_url" 
+                           value="{{ lnbits_url }}" 
+                           placeholder="https://legend.lnbits.com">
+                </div>
+                <div class="form-group">
+                    <label for="lnbits_api_key">Invoice/Read Key</label>
+                    <input type="password" id="lnbits_api_key" name="lnbits_api_key" 
+                           value="{{ lnbits_api_key }}" 
+                           placeholder="Your LNbits Invoice/Read API key">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Lightning Settings</button>
+            </form>
         </section>
 
         <!-- Recent Generations Section -->
@@ -406,7 +517,7 @@
                     {% for gen in generations %}
                     <tr>
                         <td>{{ gen.id }}</td>
-                        <td>{{ gen.fan_platform or '-' }}</td>
+                        <td>{{ gen.fan_platform|capitalize if gen.fan_platform else '-' }}</td>
                         <td>{{ gen.fan_handle or '-' }}</td>
                         <td>
                             {{ gen.payment_method }}
@@ -501,6 +612,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 dropZone.querySelector('span').textContent = 'Uploading...';
                 form.submit();
             }
+        });
+    });
+    
+    // Preset edit/cancel buttons
+    document.querySelectorAll('.edit-preset-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const presetId = this.dataset.presetId;
+            document.getElementById('preset-view-' + presetId).style.display = 'none';
+            document.getElementById('preset-edit-' + presetId).style.display = 'block';
+            this.style.display = 'none';
+        });
+    });
+    
+    document.querySelectorAll('.cancel-edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const presetId = this.dataset.presetId;
+            document.getElementById('preset-view-' + presetId).style.display = 'block';
+            document.getElementById('preset-edit-' + presetId).style.display = 'none';
+            document.querySelector('.edit-preset-btn[data-preset-id="' + presetId + '"]').style.display = 'inline-block';
         });
     });
 });

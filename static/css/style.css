@@ -284,6 +284,55 @@ body {
     display: block;
 }
 
+/* Image Source Options (fan-facing page) */
+.image-source-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 600px) {
+    .image-source-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+.image-source-option {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.image-source-option h4 {
+    margin-bottom: 16px;
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+.image-source-option .drop-zone {
+    min-height: 120px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.drop-zone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.drop-zone-icon {
+    font-size: 2rem;
+}
+
+.drop-zone-text {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
 /* Forms */
 .form-group {
     margin-bottom: 16px;

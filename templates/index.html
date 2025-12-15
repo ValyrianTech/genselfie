@@ -101,34 +101,38 @@
         <div class="step" id="step-image">
             <h3>Step {{ "2" if presets else "1" }}: Your Photo</h3>
             
-            <div class="tabs">
-                <button class="tab active" data-tab="social">Social Media</button>
-                <button class="tab" data-tab="upload">Upload Photo</button>
-            </div>
-            
-            <div class="tab-content active" id="tab-social">
-                <div class="form-group">
-                    <label for="platform">Platform</label>
-                    <select id="platform" name="platform">
-                        <option value="twitter">Twitter / X</option>
-                        <option value="bluesky">Bluesky</option>
-                        <option value="github">GitHub</option>
-                        <option value="mastodon">Mastodon</option>
-                        <option value="nostr">Nostr</option>
-                    </select>
+            <div class="image-source-options">
+                <!-- Upload Option -->
+                <div class="image-source-option" id="upload-option">
+                    <h4>Upload a Photo</h4>
+                    <label class="drop-zone" id="fan-drop-zone">
+                        <input type="file" id="photo-upload" name="photo" accept="image/*">
+                        <div class="drop-zone-content">
+                            <span class="drop-zone-icon">📷</span>
+                            <span class="drop-zone-text">Drop image here or click to browse</span>
+                        </div>
+                    </label>
                 </div>
-                <div class="form-group">
-                    <label for="handle">Handle</label>
-                    <input type="text" id="handle" name="handle" placeholder="username">
-                    <small class="help-text" id="handle-help">Enter your Twitter/X username without @</small>
-                </div>
-                <button type="button" class="btn btn-secondary" id="fetch-profile">Fetch Profile Photo</button>
-            </div>
-            
-            <div class="tab-content" id="tab-upload">
-                <div class="form-group">
-                    <label for="photo-upload">Upload a photo</label>
-                    <input type="file" id="photo-upload" name="photo" accept="image/*">
+                
+                <!-- Social Media Option -->
+                <div class="image-source-option" id="social-option">
+                    <h4>Or Use Social Media</h4>
+                    <div class="form-group">
+                        <label for="platform">Platform</label>
+                        <select id="platform" name="platform">
+                            <option value="twitter">Twitter / X</option>
+                            <option value="bluesky">Bluesky</option>
+                            <option value="github">GitHub</option>
+                            <option value="mastodon">Mastodon</option>
+                            <option value="nostr">Nostr</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="handle">Handle</label>
+                        <input type="text" id="handle" name="handle" placeholder="username">
+                        <small class="help-text" id="handle-help">Enter your Twitter/X username without @</small>
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="fetch-profile">Fetch Profile Photo</button>
                 </div>
             </div>
             

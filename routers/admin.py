@@ -155,6 +155,10 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "presets": presets,
         "preset_names": preset_names,
         "comfyui_url": app_settings.comfyui_url,
+        "stripe_secret_key": app_settings.stripe_secret_key,
+        "stripe_publishable_key": app_settings.stripe_publishable_key,
+        "lnbits_url": app_settings.lnbits_url,
+        "lnbits_api_key": app_settings.lnbits_api_key,
     })
 
 
@@ -413,6 +417,57 @@ async def update_comfyui_url(
     
     # Update runtime config
     app_settings.comfyui_url = clean_url
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/stripe-settings")
+async def update_stripe_settings(
+    request: Request,
+    stripe_secret_key: str = Form(""),
+    stripe_publishable_key: str = Form("")
+):
+    """Update Stripe API keys in .env file."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    from dotenv import set_key
+    from config import ENV_PATH
+    
+    # Update .env file
+    set_key(str(ENV_PATH), "STRIPE_SECRET_KEY", stripe_secret_key.strip())
+    set_key(str(ENV_PATH), "STRIPE_PUBLISHABLE_KEY", stripe_publishable_key.strip())
+    
+    # Update runtime config
+    app_settings.stripe_secret_key = stripe_secret_key.strip()
+    app_settings.stripe_publishable_key = stripe_publishable_key.strip()
+    
+    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/lnbits-settings")
+async def update_lnbits_settings(
+    request: Request,
+    lnbits_url: str = Form(""),
+    lnbits_api_key: str = Form("")
+):
+    """Update LNbits settings in .env file."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    from dotenv import set_key
+    from config import ENV_PATH
+    
+    # Clean URL
+    clean_url = lnbits_url.strip().rstrip("/")
+    
+    # Update .env file
+    set_key(str(ENV_PATH), "LNBITS_URL", clean_url)
+    set_key(str(ENV_PATH), "LNBITS_API_KEY", lnbits_api_key.strip())
+    
+    # Update runtime config
+    app_settings.lnbits_url = clean_url
+    app_settings.lnbits_api_key = lnbits_api_key.strip()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 

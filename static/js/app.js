@@ -181,16 +181,48 @@ document.addEventListener('DOMContentLoaded', function() {
         photoUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                state.uploadedFile = file;
-                state.imageUrl = null;
-                
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImg.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                    checkReadyToGenerate();
-                };
-                reader.readAsDataURL(file);
+                handleFileUpload(file);
+            }
+        });
+    }
+    
+    // Handle file upload (shared between input and drag-drop)
+    function handleFileUpload(file) {
+        state.uploadedFile = file;
+        state.imageUrl = null;
+        state.platform = null;
+        state.handle = null;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            imagePreview.style.display = 'block';
+            checkReadyToGenerate();
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // Drag and drop for fan upload
+    const fanDropZone = document.getElementById('fan-drop-zone');
+    if (fanDropZone) {
+        fanDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fanDropZone.classList.add('drag-over');
+        });
+        
+        fanDropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            fanDropZone.classList.remove('drag-over');
+        });
+        
+        fanDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fanDropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.type.startsWith('image/')) {
+                    handleFileUpload(file);
+                }
             }
         });
     }
