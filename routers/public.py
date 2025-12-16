@@ -1,3 +1,4 @@
+import secrets
 from typing import Optional
 from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -7,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
 
-from config import settings as app_settings
+from config import settings as app_settings, logger
 from database import get_db, Settings, InfluencerImage, Generation, PromoCode, Preset
 from services.social import fetch_profile_image
 from services.codes import validate_and_consume_code
@@ -19,6 +20,21 @@ templates = Jinja2Templates(directory="templates")
 
 # Supported image extensions
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+
+
+async def create_failsafe_code(db: AsyncSession) -> Optional[str]:
+    """Create a single-use promo code for failed generation retry."""
+    code = f"RETRY-{secrets.token_urlsafe(6).upper()}"
+    promo = PromoCode(
+        code=code,
+        uses_remaining=1,
+        max_uses=1,
+        is_active=True
+    )
+    db.add(promo)
+    await db.commit()
+    logger.info(f"Created failsafe promo code: {code}")
+    return code
 
 
 def sanitize_folder_name(name: str) -> str:
@@ -389,7 +405,9 @@ async def generation_status(generation_id: int, db: AsyncSession = Depends(get_d
         })
     
     if generation.status == "failed":
-        return JSONResponse({"status": "failed"})
+        # Check if there's already a retry code for this generation
+        retry_code = generation.retry_code if hasattr(generation, 'retry_code') else None
+        return JSONResponse({"status": "failed", "retry_code": retry_code})
     
     if generation.prompt_id:
         # Check ComfyUI status
@@ -410,7 +428,15 @@ async def generation_status(generation_id: int, db: AsyncSession = Depends(get_d
                 })
             except Exception as e:
                 generation.status = "failed"
+                
+                # Create failsafe retry code if enabled
+                retry_code = None
+                settings = await db.get(Settings, 1)
+                if settings and settings.failsafe_enabled and not generation.retry_code:
+                    retry_code = await create_failsafe_code(db)
+                    generation.retry_code = retry_code
+                
                 await db.commit()
-                return JSONResponse({"status": "failed", "error": str(e)})
+                return JSONResponse({"status": "failed", "error": str(e), "retry_code": retry_code})
     
     return JSONResponse({"status": generation.status})

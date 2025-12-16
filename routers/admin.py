@@ -204,6 +204,7 @@ async def update_settings(
     stripe_enabled: bool = Form(False),
     lightning_enabled: bool = Form(False),
     codes_enabled: bool = Form(False),
+    failsafe_enabled: bool = Form(False),
     comfyui_url: str = Form(""),
     db: AsyncSession = Depends(get_db)
 ):
@@ -220,6 +221,7 @@ async def update_settings(
     settings.stripe_enabled = stripe_enabled
     settings.lightning_enabled = lightning_enabled
     settings.codes_enabled = codes_enabled
+    settings.failsafe_enabled = failsafe_enabled
     
     await db.commit()
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)

@@ -31,6 +31,9 @@ class Settings(Base):
     lightning_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     codes_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     
+    # Failsafe: auto-generate promo code on failed generation
+    failsafe_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    
     # ComfyUI workflow
     workflow_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
@@ -75,6 +78,7 @@ class Generation(Base):
     payment_method: Mapped[str] = mapped_column(String(20))  # code, stripe, lightning
     promo_code_used: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     payment_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    retry_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # Failsafe code if generation failed
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 

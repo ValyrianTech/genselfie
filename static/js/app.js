@@ -669,7 +669,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     downloadBtn.href = data.result_url;
                     downloadBtn.download = 'selfie.png';
                 } else if (data.status === 'failed') {
-                    loading.innerHTML = '<p class="alert alert-error">Generation failed. Please try again.</p>';
+                    let errorMessage = '<p class="alert alert-error">Generation failed.</p>';
+                    if (data.retry_code) {
+                        errorMessage = `
+                            <div class="alert alert-error">
+                                <p><strong>Generation failed.</strong></p>
+                                <p>Use this code to try again for free:</p>
+                                <p class="retry-code"><strong>${data.retry_code}</strong></p>
+                                <button type="button" class="btn btn-secondary btn-small" onclick="navigator.clipboard.writeText('${data.retry_code}'); this.textContent='Copied!';">Copy Code</button>
+                            </div>
+                        `;
+                    }
+                    loading.innerHTML = errorMessage;
                 } else {
                     // Continue polling
                     setTimeout(poll, 3000);
