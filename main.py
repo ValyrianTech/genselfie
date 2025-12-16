@@ -12,9 +12,33 @@ from routers import admin, public
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database on startup."""
+    import os
+    
     logger.info("Starting GenSelfie server...")
     await init_db()
+    
+    # Log startup info
     logger.info(f"ComfyUI URL: {settings.comfyui_url}")
+    logger.info("")
+    logger.info("=" * 50)
+    logger.info("GenSelfie is ready!")
+    logger.info("=" * 50)
+    logger.info(f"Fan-facing page:  http://localhost:8000/")
+    logger.info(f"Admin panel:      http://localhost:8000/admin")
+    
+    # Show admin password info
+    if os.environ.get("_GENSELFIE_NEW_PASSWORD"):
+        logger.info("")
+        logger.info("*** NEW ADMIN PASSWORD GENERATED ***")
+        logger.info(f"Password: {settings.admin_password}")
+        logger.info("This password is saved in .env - please keep it safe!")
+        del os.environ["_GENSELFIE_NEW_PASSWORD"]
+    else:
+        logger.info(f"Admin password:   (stored in .env)")
+    
+    logger.info("=" * 50)
+    logger.info("")
+    
     yield
     logger.info("Shutting down GenSelfie server...")
 

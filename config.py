@@ -19,8 +19,8 @@ def ensure_admin_password() -> str:
         if not ENV_PATH.exists():
             ENV_PATH.touch()
         set_key(str(ENV_PATH), "ADMIN_PASSWORD", password)
-        print(f"Generated new ADMIN_PASSWORD: {password}")
-        print("Please save this password - it's stored in .env")
+        # Store flag to show password was just generated
+        os.environ["_GENSELFIE_NEW_PASSWORD"] = "1"
     return password
 
 
