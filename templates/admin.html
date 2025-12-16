@@ -249,7 +249,8 @@
                             </div>
                             <div class="form-group">
                                 <label>Prompt (optional)</label>
-                                <textarea name="prompt" rows="3">{{ preset.prompt or '' }}</textarea>
+                                <textarea name="prompt" rows="3" placeholder="e.g., A photo of the character from image 1 and the character from image 2 taking a selfie together...">{{ preset.prompt or '' }}</textarea>
+                                <small class="help-text">Refer to the influencer as "the character from image 1" and the fan as "the character from image 2"</small>
                             </div>
                             <div class="form-group">
                                 <label>Price (cents)</label>
@@ -312,7 +313,8 @@
                 </div>
                 <div class="form-group">
                     <label for="preset-prompt">Prompt (optional)</label>
-                    <textarea id="preset-prompt" name="prompt" rows="3" placeholder="Custom prompt for this preset..."></textarea>
+                    <textarea id="preset-prompt" name="prompt" rows="3" placeholder="e.g., A photo of the character from image 1 and the character from image 2 taking a selfie together at a concert, smiling, warm lighting, high quality"></textarea>
+                    <small class="help-text">Refer to the influencer as "the character from image 1" and the fan as "the character from image 2". Example: "A photo of the character from image 1 and the character from image 2 as medieval knights in a castle, cinematic lighting"</small>
                 </div>
                 <div class="form-group">
                     <label for="preset-price">Price (cents)</label>
