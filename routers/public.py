@@ -173,6 +173,7 @@ async def fetch_profile(
 
 @router.post("/api/create-payment")
 async def create_payment(
+    request: Request,
     payment_type: str = Form(...),  # stripe or lightning
     preset_id: Optional[int] = Form(None),
     db: AsyncSession = Depends(get_db)
@@ -193,7 +194,13 @@ async def create_payment(
     if payment_type == "stripe":
         if not settings.stripe_enabled:
             raise HTTPException(status_code=400, detail="Stripe payments not enabled")
-        result = await create_stripe_payment(price_cents, settings.currency)
+        
+        # Build URLs based on current request
+        base_url = str(request.base_url).rstrip("/")
+        success_url = f"{base_url}/?payment=success&session_id={{CHECKOUT_SESSION_ID}}&preset_id={preset_id}"
+        cancel_url = f"{base_url}/?payment=cancelled"
+        
+        result = await create_stripe_payment(price_cents, settings.currency, success_url, cancel_url)
         return JSONResponse(result)
     
     elif payment_type == "lightning":

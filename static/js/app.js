@@ -61,6 +61,50 @@ document.addEventListener('DOMContentLoaded', function() {
         presetId: null,
         customPrompt: null
     };
+    
+    // Check for Stripe return
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const sessionId = urlParams.get('session_id');
+    const presetIdFromUrl = urlParams.get('preset_id');
+    
+    if (paymentStatus === 'success' && sessionId) {
+        // User returned from successful Stripe payment
+        state.paymentMethod = 'stripe';
+        state.paymentId = sessionId;
+        if (presetIdFromUrl) {
+            state.presetId = presetIdFromUrl;
+        }
+        
+        // Show success message
+        const codeStatus = document.getElementById('code-status');
+        if (codeStatus) {
+            codeStatus.innerHTML = '<span class="alert alert-success">Payment successful! Upload your photo and generate.</span>';
+        }
+        
+        // Clean URL without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Auto-select the preset if specified
+        if (presetIdFromUrl) {
+            const presetRadio = document.querySelector(`input[name="preset_id"][value="${presetIdFromUrl}"]`);
+            if (presetRadio) {
+                presetRadio.checked = true;
+                const presetOption = presetRadio.closest('.preset-option');
+                if (presetOption) {
+                    document.querySelectorAll('.preset-option').forEach(o => o.classList.remove('selected'));
+                    presetOption.classList.add('selected');
+                }
+            }
+        }
+    } else if (paymentStatus === 'cancelled') {
+        // User cancelled payment
+        alert('Payment was cancelled. Please try again.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Defer checkReadyToGenerate call until after elements are set up
+    const stripePaymentReady = paymentStatus === 'success' && sessionId;
 
     // Elements
     const tabs = document.querySelectorAll('.tab');
@@ -406,6 +450,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Please select a style first');
                 return;
             }
+            
+            payStripeBtn.disabled = true;
+            payStripeBtn.textContent = 'Redirecting...';
+            
             try {
                 const formData = new FormData();
                 formData.append('payment_type', 'stripe');
@@ -420,26 +468,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.error) {
                     alert(data.error);
+                    payStripeBtn.disabled = false;
+                    payStripeBtn.textContent = 'Pay Now';
                     return;
                 }
                 
-                // Initialize Stripe
-                const stripe = Stripe(data.publishable_key);
-                
-                // Redirect to Stripe Checkout or use Elements
-                // For simplicity, we'll use Payment Element
-                const { error } = await stripe.confirmPayment({
-                    clientSecret: data.client_secret,
-                    confirmParams: {
-                        return_url: window.location.href
-                    }
-                });
-                
-                if (error) {
-                    alert(error.message);
+                // Redirect to Stripe Checkout
+                if (data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                } else {
+                    alert('Failed to create checkout session');
+                    payStripeBtn.disabled = false;
+                    payStripeBtn.textContent = 'Pay Now';
                 }
             } catch (error) {
                 alert('Payment error: ' + error.message);
+                payStripeBtn.disabled = false;
+                payStripeBtn.textContent = 'Pay Now';
             }
         });
     }
@@ -630,6 +675,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         poll();
+    }
+    
+    // If user returned from Stripe payment, check if ready to generate
+    if (stripePaymentReady) {
+        checkReadyToGenerate();
     }
 
 });

@@ -34,15 +34,17 @@ def generate_qr_code_base64(data: str) -> str:
 # Stripe Integration
 # ============================================================================
 
-async def create_stripe_payment(amount_cents: int, currency: str) -> dict:
-    """Create a Stripe PaymentIntent.
+async def create_stripe_payment(amount_cents: int, currency: str, success_url: str = None, cancel_url: str = None) -> dict:
+    """Create a Stripe Checkout Session.
     
     Args:
         amount_cents: Amount in smallest currency unit (cents for USD)
         currency: Three-letter currency code (e.g., 'USD')
+        success_url: URL to redirect to after successful payment
+        cancel_url: URL to redirect to if payment is cancelled
     
     Returns:
-        Dict with client_secret and payment_intent_id
+        Dict with checkout_url to redirect the user to
     """
     if not settings.stripe_secret_key:
         return {"error": "Stripe not configured"}
@@ -51,26 +53,38 @@ async def create_stripe_payment(amount_cents: int, currency: str) -> dict:
         import stripe
         stripe.api_key = settings.stripe_secret_key
         
-        intent = stripe.PaymentIntent.create(
-            amount=amount_cents,
-            currency=currency.lower(),
-            automatic_payment_methods={"enabled": True},
+        # Create a Checkout Session
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": currency.lower(),
+                    "product_data": {
+                        "name": "GenSelfie Generation",
+                        "description": "AI-generated selfie with your favorite influencer",
+                    },
+                    "unit_amount": amount_cents,
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url=success_url or "http://localhost:8000/?payment=success&session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=cancel_url or "http://localhost:8000/?payment=cancelled",
         )
         
         return {
-            "client_secret": intent.client_secret,
-            "payment_intent_id": intent.id,
-            "publishable_key": settings.stripe_publishable_key
+            "checkout_url": session.url,
+            "session_id": session.id,
         }
     except Exception as e:
         return {"error": str(e)}
 
 
-async def check_stripe_payment(payment_intent_id: str) -> dict:
-    """Check the status of a Stripe PaymentIntent.
+async def check_stripe_payment(session_id: str) -> dict:
+    """Check the status of a Stripe Checkout Session.
     
     Args:
-        payment_intent_id: The PaymentIntent ID to check
+        session_id: The Checkout Session ID to check
     
     Returns:
         Dict with 'paid' boolean and status info
@@ -82,11 +96,11 @@ async def check_stripe_payment(payment_intent_id: str) -> dict:
         import stripe
         stripe.api_key = settings.stripe_secret_key
         
-        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        session = stripe.checkout.Session.retrieve(session_id)
         
         return {
-            "paid": intent.status == "succeeded",
-            "status": intent.status
+            "paid": session.payment_status == "paid",
+            "status": session.payment_status
         }
     except Exception as e:
         return {"error": str(e), "paid": False}
