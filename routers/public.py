@@ -211,9 +211,9 @@ async def create_payment(
         if not settings.stripe_enabled:
             raise HTTPException(status_code=400, detail="Stripe payments not enabled")
         
-        # Use public_url if set (for RunPod/proxy setups), otherwise use request base URL
-        if settings.public_url:
-            base_url = settings.public_url.rstrip("/")
+        # Use PUBLIC_URL env var if set (for RunPod/proxy setups), otherwise use request base URL
+        if app_settings.public_url:
+            base_url = app_settings.public_url.rstrip("/")
         else:
             base_url = str(request.base_url).rstrip("/")
         

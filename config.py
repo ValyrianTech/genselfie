@@ -32,6 +32,22 @@ def ensure_admin_password() -> str:
     return password
 
 
+def get_runpod_proxy_url(port: int = 8000) -> str | None:
+    """Get the expected RunPod proxy URL if running on RunPod.
+    
+    Returns the proxy URL based on RUNPOD_POD_ID, or None if not on RunPod.
+    """
+    pod_id = os.getenv("RUNPOD_POD_ID")
+    if pod_id:
+        return f"https://{pod_id}-{port}.proxy.runpod.net"
+    return None
+
+
+def is_on_runpod() -> bool:
+    """Check if running on RunPod."""
+    return os.getenv("RUNPOD_POD_ID") is not None
+
+
 class Settings(BaseSettings):
     # App settings
     app_name: str = "GenSelfie"
@@ -51,6 +67,9 @@ class Settings(BaseSettings):
     # LNbits (optional)
     lnbits_url: str = ""
     lnbits_api_key: str = ""
+    
+    # Public URL for Stripe redirects (required on RunPod)
+    public_url: str = ""
     
     # Paths
     base_dir: Path = Path(__file__).parent.resolve()

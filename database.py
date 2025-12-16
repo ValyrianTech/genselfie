@@ -18,7 +18,6 @@ class Settings(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     app_name: Mapped[str] = mapped_column(String(255), default="GenSelfie")
     tagline: Mapped[str] = mapped_column(String(500), default="Get a selfie with your favorite influencer!")
-    public_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # For Stripe redirects behind proxies
     banner_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     logo_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     primary_color: Mapped[str] = mapped_column(String(7), default="#6366f1")

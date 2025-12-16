@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings as app_settings, logger
+from config import settings as app_settings, logger, get_runpod_proxy_url, is_on_runpod
 from database import get_db, Settings, InfluencerImage, PromoCode, Generation, Preset
 
 router = APIRouter(tags=["admin"])
@@ -145,6 +145,13 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
     # Get flash message from query params
     flash_message = request.query_params.get("message")
     
+    # RunPod detection for public URL warning
+    runpod_detected = is_on_runpod()
+    runpod_expected_url = get_runpod_proxy_url(8000) if runpod_detected else None
+    public_url_configured = app_settings.public_url
+    public_url_mismatch = (runpod_detected and public_url_configured and 
+                          public_url_configured.rstrip("/") != runpod_expected_url.rstrip("/"))
+    
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "settings": settings,
@@ -162,7 +169,11 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "stripe_publishable_key": app_settings.stripe_publishable_key,
         "lnbits_url": app_settings.lnbits_url,
         "lnbits_api_key": app_settings.lnbits_api_key,
+        "public_url": app_settings.public_url,
         "flash_message": flash_message,
+        "runpod_detected": runpod_detected,
+        "runpod_expected_url": runpod_expected_url,
+        "public_url_mismatch": public_url_mismatch,
     })
 
 
@@ -198,7 +209,6 @@ async def update_settings(
     request: Request,
     app_name: str = Form(...),
     tagline: str = Form(""),
-    public_url: str = Form(""),
     primary_color: str = Form("#6366f1"),
     secondary_color: str = Form("#8b5cf6"),
     currency: str = Form("USD"),
@@ -216,7 +226,6 @@ async def update_settings(
     settings = await db.get(Settings, 1)
     settings.app_name = app_name
     settings.tagline = tagline
-    settings.public_url = public_url if public_url else None
     settings.primary_color = primary_color
     settings.secondary_color = secondary_color
     settings.currency = currency

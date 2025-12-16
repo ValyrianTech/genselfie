@@ -18,6 +18,25 @@
     </div>
     {% endif %}
 
+    {% if runpod_detected and settings.stripe_enabled %}
+    <div class="runpod-warning">
+        <h3>⚠️ RunPod Stripe Configuration</h3>
+        {% if not public_url %}
+        <p><strong>PUBLIC_URL not set!</strong> Stripe payments will fail to redirect properly.</p>
+        <p>Add this to your <code>.env</code> file in <code>/workspace</code>:</p>
+        <pre>PUBLIC_URL={{ runpod_expected_url }}</pre>
+        <p>Then restart the server for changes to take effect.</p>
+        {% elif public_url_mismatch %}
+        <p><strong>PUBLIC_URL mismatch!</strong> The configured URL doesn't match this pod.</p>
+        <p>Current: <code>{{ public_url }}</code></p>
+        <p>Expected: <code>{{ runpod_expected_url }}</code></p>
+        <p>Update your <code>.env</code> file and restart the server.</p>
+        {% else %}
+        <p class="success">✓ PUBLIC_URL is correctly configured: <code>{{ public_url }}</code></p>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="admin-grid">
         <!-- Settings Section -->
         <section class="admin-section">
@@ -31,12 +50,6 @@
                 <div class="form-group">
                     <label for="tagline">Tagline</label>
                     <input type="text" id="tagline" name="tagline" value="{{ settings.tagline }}">
-                </div>
-                
-                <div class="form-group">
-                    <label for="public_url">Public URL (for RunPod/proxy)</label>
-                    <input type="url" id="public_url" name="public_url" value="{{ settings.public_url or '' }}" placeholder="https://your-runpod-proxy-url.com">
-                    <small class="help-text">Required for Stripe redirects on RunPod. Enter your RunPod proxy URL (e.g., https://abc123-8000.proxy.runpod.net). Leave empty for direct hosting.</small>
                 </div>
                 
                 <div class="form-row">
@@ -578,6 +591,38 @@
 </div>
 
 <style>
+.runpod-warning {
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--error-color);
+    border-radius: 8px;
+    color: var(--text-color);
+}
+.runpod-warning h3 {
+    margin: 0 0 12px 0;
+    color: var(--error-color);
+}
+.runpod-warning p {
+    margin: 8px 0;
+}
+.runpod-warning pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 14px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: monospace;
+    margin: 8px 0;
+}
+.runpod-warning code {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+.runpod-warning .success {
+    color: var(--success-color);
+}
 .flash-message {
     display: flex;
     align-items: center;
