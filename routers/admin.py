@@ -4,13 +4,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings as app_settings
+from config import settings as app_settings, logger
 from database import get_db, Settings, InfluencerImage, PromoCode, Generation, Preset
 
 router = APIRouter(tags=["admin"])
@@ -142,6 +142,9 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
     # Create mapping of image IDs to names for display
     image_names = {img.id: img.original_name for img in images}
     
+    # Get flash message from query params
+    flash_message = request.query_params.get("message")
+    
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "settings": settings,
@@ -159,6 +162,7 @@ async def admin_page(request: Request, db: AsyncSession = Depends(get_db)):
         "stripe_publishable_key": app_settings.stripe_publishable_key,
         "lnbits_url": app_settings.lnbits_url,
         "lnbits_api_key": app_settings.lnbits_api_key,
+        "flash_message": flash_message,
     })
 
 
@@ -585,14 +589,17 @@ async def generate_example(
 async def generate_all_examples(
     request: Request,
     preset_id: int = Form(...),
+    background_tasks: BackgroundTasks = None,
     db: AsyncSession = Depends(get_db)
 ):
-    """Generate example selfies for all example inputs for a specific preset."""
+    """Generate example selfies for all example inputs for a specific preset.
+    
+    Jobs are queued and run in the background - refresh the page to see results.
+    """
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    from services.comfyui import generate_selfie, upload_image_to_comfyui, download_output_image, get_generation_status
-    import asyncio
+    from services.comfyui import generate_selfie, upload_image_to_comfyui
     
     # Get all example inputs from disk
     example_inputs = get_example_inputs_from_disk()
@@ -605,9 +612,13 @@ async def generate_all_examples(
     if not influencer:
         raise HTTPException(status_code=400, detail="Preset's influencer image not found")
     
-    # Track all prompt IDs
-    generations = []
+    # Prepare folder for generated images
+    folder_name = sanitize_folder_name(preset.name)
+    generated_dir = app_settings.upload_dir / "generated" / folder_name
+    generated_dir.mkdir(exist_ok=True, parents=True)
     
+    # Queue all generation jobs (they run on ComfyUI in background)
+    queued_count = 0
     for example in example_inputs:
         example_path = app_settings.upload_dir / "examples" / example["filename"]
         await upload_image_to_comfyui(example_path)
@@ -620,28 +631,49 @@ async def generate_all_examples(
                 height=preset.height,
                 prompt=preset.prompt
             )
-            generations.append({"prompt_id": prompt_id, "name": example["name"]})
+            queued_count += 1
+            
+            # Start background task to poll and download this specific generation
+            if background_tasks:
+                background_tasks.add_task(
+                    poll_and_download_generation,
+                    prompt_id,
+                    example["name"],
+                    generated_dir
+                )
         except Exception as e:
-            print(f"[ERROR] Failed to generate for {example['name']}: {e}")
+            logger.error(f"Failed to queue generation for {example['name']}: {e}")
     
-    # Poll for completions and download results (using preset name for folder)
-    folder_name = sanitize_folder_name(preset.name)
-    generated_dir = app_settings.upload_dir / "generated" / folder_name
-    generated_dir.mkdir(exist_ok=True, parents=True)
+    logger.info(f"Queued {queued_count} example generations for preset '{preset.name}'")
     
-    for gen in generations:
-        for _ in range(120):  # Wait up to 2 minutes per image
-            await asyncio.sleep(1)
-            status_result = await get_generation_status(gen["prompt_id"])
+    # Return immediately with message - jobs run in background
+    return RedirectResponse(
+        url=f"/admin?message=Queued {queued_count} generations. Check the ComfyUI queue and refresh this page when complete.",
+        status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+async def poll_and_download_generation(prompt_id: str, name: str, output_dir: Path):
+    """Background task to poll for generation completion and download result."""
+    from services.comfyui import get_generation_status, download_output_image
+    import asyncio
+    
+    for _ in range(180):  # Wait up to 3 minutes
+        await asyncio.sleep(2)
+        try:
+            status_result = await get_generation_status(prompt_id)
             if status_result.get("completed"):
                 image_url = status_result.get("image_url")
                 if image_url:
-                    output_filename = f"{gen['name']}_{uuid.uuid4().hex[:8]}.png"
-                    save_path = generated_dir / output_filename
+                    output_filename = f"{name}_{uuid.uuid4().hex[:8]}.png"
+                    save_path = output_dir / output_filename
                     await download_output_image(image_url, save_path)
-                break
+                    logger.info(f"Downloaded generated example: {output_filename}")
+                return
+        except Exception as e:
+            logger.error(f"Error polling generation {prompt_id}: {e}")
     
-    return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+    logger.warning(f"Generation {prompt_id} timed out after 3 minutes")
 
 
 @router.post("/delete-generated/{filepath:path}")

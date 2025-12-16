@@ -11,6 +11,13 @@
         </form>
     </header>
 
+    {% if flash_message %}
+    <div class="flash-message" id="flash-message">
+        <span>{{ flash_message }}</span>
+        <button type="button" class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endif %}
+
     <div class="admin-grid">
         <!-- Settings Section -->
         <section class="admin-section">
@@ -554,6 +561,29 @@
 </div>
 
 <style>
+.flash-message {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    color: var(--text-color);
+}
+.flash-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+.flash-close:hover {
+    color: var(--text-color);
+}
 .generation-thumbnail {
     width: 50px;
     height: 50px;
