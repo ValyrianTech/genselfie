@@ -662,7 +662,7 @@ async def poll_and_download_generation(prompt_id: str, name: str, output_dir: Pa
     from services.comfyui import get_generation_status, download_output_image
     import asyncio
     
-    for _ in range(180):  # Wait up to 3 minutes
+    for _ in range(180):  # Wait up to 6 minutes (180 * 2 seconds)
         await asyncio.sleep(2)
         try:
             status_result = await get_generation_status(prompt_id)
@@ -673,11 +673,15 @@ async def poll_and_download_generation(prompt_id: str, name: str, output_dir: Pa
                     save_path = output_dir / output_filename
                     await download_output_image(image_url, save_path)
                     logger.info(f"Downloaded generated example: {output_filename}")
-                return
+                    return
+                else:
+                    # Completed but no image URL yet - history may not be ready, keep polling
+                    logger.debug(f"Generation {prompt_id} completed but no image URL yet, retrying...")
+                    continue
         except Exception as e:
             logger.error(f"Error polling generation {prompt_id}: {e}")
     
-    logger.warning(f"Generation {prompt_id} timed out after 3 minutes")
+    logger.warning(f"Generation {prompt_id} timed out after 6 minutes")
 
 
 @router.post("/delete-generated/{filepath:path}")
