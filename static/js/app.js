@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', function() {
         promoCode: null,
         generationId: null,
         presetId: null,
-        customPrompt: null
+        customPrompt: null,
+        pendingId: null  // For Stripe: tracks stored image/prompt across redirect
     };
     
     // Check for Stripe return
@@ -67,6 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const paymentStatus = urlParams.get('payment');
     const sessionId = urlParams.get('session_id');
     const presetIdFromUrl = urlParams.get('preset_id');
+    const pendingIdFromUrl = urlParams.get('pending_id');
     
     if (paymentStatus === 'success' && sessionId) {
         // User returned from successful Stripe payment
@@ -75,11 +77,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (presetIdFromUrl) {
             state.presetId = presetIdFromUrl;
         }
+        if (pendingIdFromUrl) {
+            state.pendingId = pendingIdFromUrl;
+        }
         
         // Show success message
         const codeStatus = document.getElementById('code-status');
         if (codeStatus) {
-            codeStatus.innerHTML = '<span class="alert alert-success">Payment successful! Upload your photo and generate.</span>';
+            codeStatus.innerHTML = '<span class="alert alert-success">Payment successful! Restoring your session...</span>';
         }
         
         // Clean URL without reloading
@@ -96,6 +101,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     presetOption.classList.add('selected');
                 }
             }
+        }
+        
+        // Restore session data (image, prompt) from server if pending_id exists
+        if (pendingIdFromUrl) {
+            fetch(`/api/pending-session/${pendingIdFromUrl}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.found) {
+                        // Restore custom prompt if available
+                        if (data.custom_prompt) {
+                            state.customPrompt = data.custom_prompt;
+                            const promptInput = document.getElementById('custom-prompt');
+                            if (promptInput) {
+                                promptInput.value = data.custom_prompt;
+                            }
+                        }
+                        
+                        // Restore image preview if available
+                        if (data.image_url) {
+                            state.imageUrl = data.image_url;
+                            const imagePreview = document.getElementById('image-preview');
+                            const previewImg = document.getElementById('preview-img');
+                            if (imagePreview && previewImg) {
+                                previewImg.src = data.image_url;
+                                imagePreview.style.display = 'block';
+                            }
+                            
+                            // Update status message
+                            if (codeStatus) {
+                                codeStatus.innerHTML = '<span class="alert alert-success">Payment successful! Click Generate to create your selfie.</span>';
+                            }
+                        }
+                        
+                        // Restore platform/handle if it was a social media fetch
+                        if (data.platform && data.handle) {
+                            state.platform = data.platform;
+                            state.handle = data.handle;
+                        }
+                    }
+                })
+                .catch(err => console.error('Failed to restore session:', err));
         }
     } else if (paymentStatus === 'cancelled') {
         // User cancelled payment
@@ -458,12 +504,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             payStripeBtn.disabled = true;
-            payStripeBtn.textContent = 'Redirecting...';
+            payStripeBtn.textContent = 'Preparing...';
             
             try {
                 const formData = new FormData();
                 formData.append('payment_type', 'stripe');
                 formData.append('preset_id', state.presetId);
+                
+                // Include image and prompt so they persist across Stripe redirect
+                if (state.uploadedFile) {
+                    formData.append('uploaded_image', state.uploadedFile);
+                }
+                if (state.platform) {
+                    formData.append('platform', state.platform);
+                }
+                if (state.handle) {
+                    formData.append('handle', state.handle);
+                }
+                if (state.customPrompt) {
+                    formData.append('custom_prompt', state.customPrompt);
+                }
+                
+                payStripeBtn.textContent = 'Redirecting...';
                 
                 const response = await fetch('/api/create-payment', {
                     method: 'POST',
@@ -624,6 +686,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (state.customPrompt) {
                     formData.append('custom_prompt', state.customPrompt);
+                }
+                if (state.pendingId) {
+                    formData.append('pending_id', state.pendingId);
                 }
                 
                 const response = await fetch('/api/generate', {

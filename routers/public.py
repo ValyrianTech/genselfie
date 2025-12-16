@@ -1,4 +1,6 @@
 import secrets
+import uuid
+import json
 from typing import Optional
 from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -20,6 +22,10 @@ templates = Jinja2Templates(directory="templates")
 
 # Supported image extensions
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+
+# Temporary storage for pending Stripe payments (image + prompt before redirect)
+# In production, consider using Redis or database for persistence
+pending_stripe_sessions: dict[str, dict] = {}
 
 
 async def create_failsafe_code(db: AsyncSession) -> Optional[str]:
@@ -192,9 +198,17 @@ async def create_payment(
     request: Request,
     payment_type: str = Form(...),  # stripe or lightning
     preset_id: Optional[int] = Form(None),
+    platform: Optional[str] = Form(None),
+    handle: Optional[str] = Form(None),
+    custom_prompt: Optional[str] = Form(None),
+    uploaded_image: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db)
 ):
-    """Create a payment intent or lightning invoice."""
+    """Create a payment intent or lightning invoice.
+    
+    For Stripe payments, also stores the uploaded image and prompt so they
+    persist across the redirect to Stripe and back.
+    """
     settings = await db.get(Settings, 1)
     
     # Get price from preset
@@ -211,14 +225,37 @@ async def create_payment(
         if not settings.stripe_enabled:
             raise HTTPException(status_code=400, detail="Stripe payments not enabled")
         
+        # Generate a pending session ID to track the image/prompt
+        pending_id = uuid.uuid4().hex
+        
+        # Store uploaded image if provided
+        stored_image_path = None
+        if uploaded_image and uploaded_image.filename:
+            ext = uploaded_image.filename.split(".")[-1]
+            filename = f"pending_{pending_id}.{ext}"
+            filepath = app_settings.upload_dir / filename
+            content = await uploaded_image.read()
+            with open(filepath, "wb") as f:
+                f.write(content)
+            stored_image_path = str(filepath)
+        
+        # Store pending session data
+        pending_stripe_sessions[pending_id] = {
+            "image_path": stored_image_path,
+            "platform": platform,
+            "handle": handle,
+            "custom_prompt": custom_prompt,
+            "preset_id": preset_id,
+        }
+        
         # Use PUBLIC_URL env var if set (for RunPod/proxy setups), otherwise use request base URL
         if app_settings.public_url:
             base_url = app_settings.public_url.rstrip("/")
         else:
             base_url = str(request.base_url).rstrip("/")
         
-        success_url = f"{base_url}/?payment=success&session_id={{CHECKOUT_SESSION_ID}}&preset_id={preset_id}"
-        cancel_url = f"{base_url}/?payment=cancelled"
+        success_url = f"{base_url}/?payment=success&session_id={{CHECKOUT_SESSION_ID}}&preset_id={preset_id}&pending_id={pending_id}"
+        cancel_url = f"{base_url}/?payment=cancelled&pending_id={pending_id}"
         
         result = await create_stripe_payment(price_cents, settings.currency, success_url, cancel_url)
         return JSONResponse(result)
@@ -239,6 +276,36 @@ async def payment_status(payment_id: str, payment_type: str):
     return JSONResponse(result)
 
 
+@router.get("/api/pending-session/{pending_id}")
+async def get_pending_session(pending_id: str):
+    """Retrieve pending session data after Stripe redirect.
+    
+    Returns the stored image path and custom prompt so the frontend
+    can restore state after returning from Stripe checkout.
+    """
+    session_data = pending_stripe_sessions.get(pending_id)
+    if not session_data:
+        return JSONResponse({"found": False})
+    
+    # Build response with image URL if we have a stored image
+    response = {
+        "found": True,
+        "platform": session_data.get("platform"),
+        "handle": session_data.get("handle"),
+        "custom_prompt": session_data.get("custom_prompt"),
+        "preset_id": session_data.get("preset_id"),
+        "image_url": None
+    }
+    
+    if session_data.get("image_path"):
+        # Convert filesystem path to URL
+        image_path = Path(session_data["image_path"])
+        if image_path.exists():
+            response["image_url"] = f"/uploads/{image_path.name}"
+    
+    return JSONResponse(response)
+
+
 @router.post("/api/generate")
 async def generate(
     request: Request,
@@ -249,11 +316,26 @@ async def generate(
     handle: Optional[str] = Form(None),
     preset_id: Optional[int] = Form(None),
     custom_prompt: Optional[str] = Form(None),
+    pending_id: Optional[str] = Form(None),  # For Stripe: retrieve stored image/prompt
     uploaded_image: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db)
 ):
     """Generate a selfie after payment verification."""
     settings = await db.get(Settings, 1)
+    
+    # For Stripe payments, retrieve stored session data if pending_id provided
+    pending_session = None
+    if pending_id and pending_id in pending_stripe_sessions:
+        pending_session = pending_stripe_sessions.pop(pending_id)  # Remove after use
+        # Use stored values if not provided in request
+        if not custom_prompt and pending_session.get("custom_prompt"):
+            custom_prompt = pending_session["custom_prompt"]
+        if not preset_id and pending_session.get("preset_id"):
+            preset_id = pending_session["preset_id"]
+        if not platform and pending_session.get("platform"):
+            platform = pending_session["platform"]
+        if not handle and pending_session.get("handle"):
+            handle = pending_session["handle"]
     
     # Get preset if specified
     preset = None
@@ -291,11 +373,18 @@ async def generate(
         raise HTTPException(status_code=400, detail="Invalid payment method")
     
     # Get fan image
-    import uuid
     fan_image_url = None
     fan_image_path = None  # Filesystem path for ComfyUI
     
-    if uploaded_image and uploaded_image.filename:
+    # First check if we have a stored image from pending Stripe session
+    if pending_session and pending_session.get("image_path"):
+        stored_path = Path(pending_session["image_path"])
+        if stored_path.exists():
+            fan_image_url = f"/uploads/{stored_path.name}"
+            fan_image_path = str(stored_path)
+            platform = "upload"
+            handle = None
+    elif uploaded_image and uploaded_image.filename:
         # Save uploaded image temporarily
         ext = uploaded_image.filename.split(".")[-1]
         filename = f"fan_{uuid.uuid4().hex}.{ext}"
