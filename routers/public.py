@@ -211,8 +211,12 @@ async def create_payment(
         if not settings.stripe_enabled:
             raise HTTPException(status_code=400, detail="Stripe payments not enabled")
         
-        # Build URLs based on current request
-        base_url = str(request.base_url).rstrip("/")
+        # Use public_url if set (for RunPod/proxy setups), otherwise use request base URL
+        if settings.public_url:
+            base_url = settings.public_url.rstrip("/")
+        else:
+            base_url = str(request.base_url).rstrip("/")
+        
         success_url = f"{base_url}/?payment=success&session_id={{CHECKOUT_SESSION_ID}}&preset_id={preset_id}"
         cancel_url = f"{base_url}/?payment=cancelled"
         

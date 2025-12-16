@@ -198,6 +198,7 @@ async def update_settings(
     request: Request,
     app_name: str = Form(...),
     tagline: str = Form(""),
+    public_url: str = Form(""),
     primary_color: str = Form("#6366f1"),
     secondary_color: str = Form("#8b5cf6"),
     currency: str = Form("USD"),
@@ -215,6 +216,7 @@ async def update_settings(
     settings = await db.get(Settings, 1)
     settings.app_name = app_name
     settings.tagline = tagline
+    settings.public_url = public_url if public_url else None
     settings.primary_color = primary_color
     settings.secondary_color = secondary_color
     settings.currency = currency
