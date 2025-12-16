@@ -132,6 +132,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const lightboxClose = document.querySelector('.lightbox-close');
     const resultImg = document.getElementById('result-img');
     const downloadBtn = document.getElementById('download-btn');
+    const shareBtn = document.getElementById('share-btn');
+    const shareOptions = document.getElementById('share-options');
+    const shareTwitter = document.getElementById('share-twitter');
+    const shareFacebook = document.getElementById('share-facebook');
+    const shareLinkedin = document.getElementById('share-linkedin');
+    const shareCopy = document.getElementById('share-copy');
 
     // Platform help text
     const platformHelp = {
@@ -680,6 +686,63 @@ document.addEventListener('DOMContentLoaded', function() {
     // If user returned from Stripe payment, check if ready to generate
     if (stripePaymentReady) {
         checkReadyToGenerate();
+    }
+    
+    // Share functionality
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+            // Toggle share options visibility
+            if (shareOptions.style.display === 'none') {
+                shareOptions.style.display = 'flex';
+                
+                // Get the image URL (full URL for sharing)
+                const imageUrl = resultImg.src;
+                const pageUrl = window.location.origin + window.location.pathname;
+                const shareText = 'Check out my AI-generated selfie!';
+                
+                // Update share links
+                if (shareTwitter) {
+                    shareTwitter.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(pageUrl)}`;
+                }
+                if (shareFacebook) {
+                    shareFacebook.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+                }
+                if (shareLinkedin) {
+                    shareLinkedin.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(pageUrl)}`;
+                }
+            } else {
+                shareOptions.style.display = 'none';
+            }
+        });
+    }
+    
+    // Copy link functionality
+    if (shareCopy) {
+        shareCopy.addEventListener('click', async () => {
+            const imageUrl = resultImg.src;
+            try {
+                await navigator.clipboard.writeText(imageUrl);
+                const originalText = shareCopy.innerHTML;
+                shareCopy.innerHTML = '<span class="share-icon">✓</span> Copied!';
+                setTimeout(() => {
+                    shareCopy.innerHTML = originalText;
+                }, 2000);
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = imageUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const originalText = shareCopy.innerHTML;
+                shareCopy.innerHTML = '<span class="share-icon">✓</span> Copied!';
+                setTimeout(() => {
+                    shareCopy.innerHTML = originalText;
+                }, 2000);
+            }
+        });
     }
 
 });
