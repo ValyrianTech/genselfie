@@ -5,8 +5,16 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv, set_key
 
-# Load .env file
-ENV_PATH = Path(__file__).parent / ".env"
+# Determine data directory (defaults to /workspace for RunPod network storage)
+DATA_DIR = Path(os.environ.get("DATA_DIR", "/workspace"))
+if not DATA_DIR.is_absolute():
+    DATA_DIR = (Path(__file__).parent / DATA_DIR).resolve()
+
+# Ensure data directory exists before loading .env
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Load .env file from data directory (persisted on RunPod network storage)
+ENV_PATH = DATA_DIR / ".env"
 load_dotenv(ENV_PATH)
 
 
