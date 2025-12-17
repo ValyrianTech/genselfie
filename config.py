@@ -3,6 +3,7 @@ import os
 import secrets
 from pathlib import Path
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from dotenv import load_dotenv, set_key
 
 # Determine data directory (defaults to /workspace for RunPod network storage)
@@ -60,6 +61,14 @@ class Settings(BaseSettings):
     
     # ComfyUI
     comfyui_url: str = "http://localhost:8188"
+    
+    @field_validator('comfyui_url', mode='after')
+    @classmethod
+    def ensure_url_scheme(cls, v: str) -> str:
+        """Ensure URL has http:// or https:// prefix."""
+        if v and not v.startswith(('http://', 'https://')):
+            return f'http://{v}'
+        return v
     
     # Stripe (optional)
     stripe_secret_key: str = ""
