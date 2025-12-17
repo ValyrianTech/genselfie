@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pendingIdFromUrl) {
             fetch(`/api/pending-session/${pendingIdFromUrl}`)
                 .then(res => res.json())
-                .then(data => {
+                .then(async data => {
                     if (data.found) {
                         // Restore custom prompt if available
                         if (data.custom_prompt) {
@@ -143,12 +143,37 @@ document.addEventListener('DOMContentLoaded', function() {
                                 previewImg.src = data.image_url;
                                 imagePreview.style.display = 'block';
                             }
-                            
-                            // Update status message
-                            const codeStatusEl = document.getElementById('code-status');
-                            if (codeStatusEl) {
-                                codeStatusEl.innerHTML = '<span class="alert alert-success">Payment successful! Click Generate to create your selfie.</span>';
+                        } else if (data.platform && data.handle && data.platform !== 'upload') {
+                            // No stored image but have platform/handle - re-fetch profile picture
+                            try {
+                                const formData = new FormData();
+                                formData.append('platform', data.platform);
+                                formData.append('handle', data.handle);
+                                
+                                const profileResponse = await fetch('/api/fetch-profile', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                const profileData = await profileResponse.json();
+                                
+                                if (profileData.success) {
+                                    state.imageUrl = profileData.image_url;
+                                    const imagePreview = document.getElementById('image-preview');
+                                    const previewImg = document.getElementById('preview-img');
+                                    if (imagePreview && previewImg) {
+                                        previewImg.src = profileData.image_url;
+                                        imagePreview.style.display = 'block';
+                                    }
+                                }
+                            } catch (err) {
+                                console.error('Failed to re-fetch profile:', err);
                             }
+                        }
+                        
+                        // Update status message
+                        const codeStatusEl = document.getElementById('code-status');
+                        if (codeStatusEl) {
+                            codeStatusEl.innerHTML = '<span class="alert alert-success">Payment successful! Click Generate to create your selfie.</span>';
                         }
                         
                         // Now that session is restored, check if ready to generate
