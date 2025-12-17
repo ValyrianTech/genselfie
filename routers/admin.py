@@ -442,9 +442,10 @@ async def update_comfyui_url(
 async def update_stripe_settings(
     request: Request,
     stripe_secret_key: str = Form(""),
-    stripe_publishable_key: str = Form("")
+    stripe_publishable_key: str = Form(""),
+    public_url: str = Form("")
 ):
-    """Update Stripe API keys in .env file."""
+    """Update Stripe API keys and public URL in .env file."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
@@ -454,10 +455,12 @@ async def update_stripe_settings(
     # Update .env file
     set_key(str(ENV_PATH), "STRIPE_SECRET_KEY", stripe_secret_key.strip())
     set_key(str(ENV_PATH), "STRIPE_PUBLISHABLE_KEY", stripe_publishable_key.strip())
+    set_key(str(ENV_PATH), "PUBLIC_URL", public_url.strip())
     
     # Update runtime config
     app_settings.stripe_secret_key = stripe_secret_key.strip()
     app_settings.stripe_publishable_key = stripe_publishable_key.strip()
+    app_settings.public_url = public_url.strip()
     
     return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 

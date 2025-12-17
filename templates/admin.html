@@ -511,6 +511,13 @@
                            value="{{ stripe_publishable_key }}" 
                            placeholder="pk_live_... or pk_test_...">
                 </div>
+                <div class="form-group">
+                    <label for="stripe_public_url">Public URL (for RunPod)</label>
+                    <input type="url" id="stripe_public_url" name="public_url" 
+                           value="{{ public_url or '' }}" 
+                           placeholder="https://your-runpod-proxy-url.com">
+                    <small class="help-text">Required on RunPod for Stripe redirects. Enter your RunPod proxy URL (e.g., https://abc123-8000.proxy.runpod.net).</small>
+                </div>
                 <button type="submit" class="btn btn-primary">Save Stripe Settings</button>
             </form>
         </section>
@@ -558,8 +565,8 @@
                     <tr>
                         <td>{{ gen.id }}</td>
                         <td>
-                            {% if gen.result_url %}
-                            <img src="{{ gen.result_url }}" alt="Result" class="generation-thumbnail" onclick="showImagePopup('{{ gen.result_url }}')">
+                            {% if gen.result_image_url %}
+                            <img src="{{ gen.result_image_url }}" alt="Result" class="generation-thumbnail" onclick="showImagePopup('{{ gen.result_image_url }}')">
                             {% else %}
                             <span class="no-image">-</span>
                             {% endif %}

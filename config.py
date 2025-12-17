@@ -89,14 +89,16 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         return f"sqlite+aiosqlite:///{self.data_dir}/genselfie.db"
     
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = {
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
 
-# Initialize settings
+# Initialize settings - use ENV_PATH for the .env file location
 _admin_password = ensure_admin_password()
-settings = Settings(admin_password=_admin_password)
+settings = Settings(admin_password=_admin_password, _env_file=ENV_PATH)
 
 # Ensure directories exist
 settings.data_dir.mkdir(parents=True, exist_ok=True)
