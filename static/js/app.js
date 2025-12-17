@@ -129,8 +129,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             
                             // Update status message
-                            if (codeStatus) {
-                                codeStatus.innerHTML = '<span class="alert alert-success">Payment successful! Click Generate to create your selfie.</span>';
+                            const codeStatusEl = document.getElementById('code-status');
+                            if (codeStatusEl) {
+                                codeStatusEl.innerHTML = '<span class="alert alert-success">Payment successful! Click Generate to create your selfie.</span>';
                             }
                         }
                         
@@ -139,6 +140,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             state.platform = data.platform;
                             state.handle = data.handle;
                         }
+                        
+                        // Now that session is restored, check if ready to generate
+                        // Need to wait for DOM elements to be available
+                        setTimeout(() => {
+                            const stepGenerate = document.getElementById('step-generate');
+                            const hasImage = state.imageUrl || state.uploadedFile;
+                            const hasPaid = state.paymentMethod !== null;
+                            if (hasImage && hasPaid && stepGenerate) {
+                                stepGenerate.style.display = 'block';
+                            }
+                        }, 100);
                     }
                 })
                 .catch(err => console.error('Failed to restore session:', err));
@@ -514,6 +526,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Include image and prompt so they persist across Stripe redirect
                 if (state.uploadedFile) {
                     formData.append('uploaded_image', state.uploadedFile);
+                } else if (state.imageUrl) {
+                    // Image was fetched from social media - send the URL
+                    formData.append('existing_image_url', state.imageUrl);
                 }
                 if (state.platform) {
                     formData.append('platform', state.platform);

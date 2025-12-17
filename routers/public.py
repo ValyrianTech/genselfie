@@ -202,6 +202,7 @@ async def create_payment(
     handle: Optional[str] = Form(None),
     custom_prompt: Optional[str] = Form(None),
     uploaded_image: Optional[UploadFile] = File(None),
+    existing_image_url: Optional[str] = Form(None),  # For social media fetched images
     db: AsyncSession = Depends(get_db)
 ):
     """Create a payment intent or lightning invoice.
@@ -228,7 +229,7 @@ async def create_payment(
         # Generate a pending session ID to track the image/prompt
         pending_id = uuid.uuid4().hex
         
-        # Store uploaded image if provided
+        # Store uploaded image if provided, or use existing image URL
         stored_image_path = None
         if uploaded_image and uploaded_image.filename:
             ext = uploaded_image.filename.split(".")[-1]
@@ -238,6 +239,14 @@ async def create_payment(
             with open(filepath, "wb") as f:
                 f.write(content)
             stored_image_path = str(filepath)
+        elif existing_image_url:
+            # Image was fetched from social media - extract filename from URL
+            # URL format: /uploads/filename.ext
+            if existing_image_url.startswith("/uploads/"):
+                filename = existing_image_url.replace("/uploads/", "")
+                filepath = app_settings.upload_dir / filename
+                if filepath.exists():
+                    stored_image_path = str(filepath)
         
         # Store pending session data
         pending_stripe_sessions[pending_id] = {
