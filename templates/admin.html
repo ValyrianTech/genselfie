@@ -738,6 +738,11 @@ document.addEventListener('keydown', function(e) {
     const statusText = document.getElementById('status-text');
     const queueInfo = document.getElementById('queue-info');
     
+    if (!statusIndicator || !statusText || !queueInfo) {
+        console.error('ComfyUI status elements not found');
+        return;
+    }
+    
     async function checkServerStatus() {
         try {
             const response = await fetch('/api/server-status');
@@ -751,9 +756,14 @@ document.addEventListener('keydown', function(e) {
             } else {
                 statusIndicator.className = 'status-indicator offline';
                 statusText.textContent = 'ComfyUI Offline';
-                queueInfo.textContent = data.url ? `Checking: ${data.url}` : '';
+                let info = data.url ? `URL: ${data.url}` : '';
+                if (data.error) {
+                    info += ` (${data.error})`;
+                }
+                queueInfo.textContent = info;
             }
         } catch (error) {
+            console.error('Server status check failed:', error);
             statusIndicator.className = 'status-indicator offline';
             statusText.textContent = 'ComfyUI Offline';
             queueInfo.textContent = '';
@@ -761,6 +771,7 @@ document.addEventListener('keydown', function(e) {
     }
     
     // Check immediately and then every 10 seconds
+    console.log('Starting ComfyUI status checks...');
     checkServerStatus();
     setInterval(checkServerStatus, 10000);
 })();
