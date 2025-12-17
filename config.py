@@ -14,8 +14,9 @@ if not DATA_DIR.is_absolute():
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load .env file from data directory (persisted on RunPod network storage)
+# Use override=False so environment variables (e.g., from RunPod) take priority
 ENV_PATH = DATA_DIR / ".env"
-load_dotenv(ENV_PATH)
+load_dotenv(ENV_PATH, override=False)
 
 
 def ensure_admin_password() -> str:
@@ -96,9 +97,11 @@ class Settings(BaseSettings):
     }
 
 
-# Initialize settings - use ENV_PATH for the .env file location
+# Initialize settings
+# Environment variables are already loaded by load_dotenv() above
+# pydantic-settings will read from os.environ which has the merged values
 _admin_password = ensure_admin_password()
-settings = Settings(admin_password=_admin_password, _env_file=ENV_PATH)
+settings = Settings(admin_password=_admin_password)
 
 # Ensure directories exist
 settings.data_dir.mkdir(parents=True, exist_ok=True)
