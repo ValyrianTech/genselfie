@@ -103,6 +103,7 @@ Deploy on RunPod:
 | `COMFYUI_URL` | ComfyUI server URL | Yes |
 | `STRIPE_SECRET_KEY` | Stripe secret key | For Stripe payments |
 | `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key | For Stripe payments |
+| `PUBLIC_URL` | Public URL for Stripe redirects | For Stripe on RunPod |
 | `LNBITS_URL` | LNbits instance URL | For Lightning payments |
 | `LNBITS_API_KEY` | LNbits API key | For Lightning payments |
 | `DEBUG` | Enable debug mode | No (default: false) |
@@ -110,6 +111,15 @@ Deploy on RunPod:
 | `DATA_DIR` | Directory for database and uploads | No (default: /workspace) |
 
 The default `DATA_DIR=/workspace` works automatically with RunPod network volumes. For local development, set `DATA_DIR=./data` or another local path.
+
+### Stripe on RunPod
+
+When running on RunPod with Stripe payments, you must set the `PUBLIC_URL` environment variable to your RunPod proxy URL. This is required because Stripe redirects users back to your app after payment, and it needs the public-facing URL (not the internal IP).
+
+1. In the RunPod dashboard, find your pod's **Proxy URL** (e.g., `https://abc123-8000.proxy.runpod.net`)
+2. Set this as the `PUBLIC_URL` environment variable or configure it in the admin panel under **Stripe Settings**
+
+Without this, Stripe redirects will fail because they'll use the internal container URL which isn't accessible from the internet.
 
 ## Project Structure
 
