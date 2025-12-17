@@ -118,6 +118,22 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         }
                         
+                        // Restore platform/handle if it was a social media fetch
+                        if (data.platform) {
+                            state.platform = data.platform;
+                            const platformSelect = document.getElementById('platform');
+                            if (platformSelect) {
+                                platformSelect.value = data.platform;
+                            }
+                        }
+                        if (data.handle) {
+                            state.handle = data.handle;
+                            const handleInput = document.getElementById('handle');
+                            if (handleInput) {
+                                handleInput.value = data.handle;
+                            }
+                        }
+                        
                         // Restore image preview if available
                         if (data.image_url) {
                             state.imageUrl = data.image_url;
@@ -133,12 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (codeStatusEl) {
                                 codeStatusEl.innerHTML = '<span class="alert alert-success">Payment successful! Click Generate to create your selfie.</span>';
                             }
-                        }
-                        
-                        // Restore platform/handle if it was a social media fetch
-                        if (data.platform && data.handle) {
-                            state.platform = data.platform;
-                            state.handle = data.handle;
                         }
                         
                         // Now that session is restored, check if ready to generate

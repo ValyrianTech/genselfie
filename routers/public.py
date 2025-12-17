@@ -121,11 +121,14 @@ async def server_status():
     """Check ComfyUI server status and queue size."""
     import httpx
     
+    comfyui_url = app_settings.comfyui_url
+    logger.debug(f"Checking ComfyUI status at: {comfyui_url}")
+    
     # Directly check if ComfyUI is reachable
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{app_settings.comfyui_url}/queue",
+                f"{comfyui_url}/queue",
                 timeout=5.0
             )
             if response.status_code == 200:
@@ -137,16 +140,18 @@ async def server_status():
                     "online": True,
                     "queue_pending": pending,
                     "queue_running": running,
-                    "queue_total": pending + running
+                    "queue_total": pending + running,
+                    "url": comfyui_url
                 })
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"ComfyUI check failed: {e}")
     
     return JSONResponse({
         "online": False,
         "queue_pending": 0,
         "queue_running": 0,
-        "queue_total": 0
+        "queue_total": 0,
+        "url": comfyui_url
     })
 
 

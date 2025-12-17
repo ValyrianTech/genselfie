@@ -751,7 +751,7 @@ document.addEventListener('keydown', function(e) {
             } else {
                 statusIndicator.className = 'status-indicator offline';
                 statusText.textContent = 'ComfyUI Offline';
-                queueInfo.textContent = '';
+                queueInfo.textContent = data.url ? `Checking: ${data.url}` : '';
             }
         } catch (error) {
             statusIndicator.className = 'status-indicator offline';
