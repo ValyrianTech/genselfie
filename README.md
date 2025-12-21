@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/GenSelfie_banner.png" alt="GenSelfie Banner" width="100%">
+</p>
+
 # GenSelfie
 
 [![Deploy to GitHub Pages](https://github.com/valyriantech/GenSelfie/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/valyriantech/GenSelfie/actions/workflows/deploy-pages.yml)
