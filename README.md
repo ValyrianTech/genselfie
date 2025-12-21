@@ -147,6 +147,16 @@ GenSelfie/
 └── genselfie.db           # SQLite database (created on first run)
 ```
 
+## RunPod Deployment
+
+The easiest way to deploy GenSelfie is on RunPod:
+
+1. **Deploy GenSelfie**: [Deploy GenSelfie on RunPod](https://console.runpod.io/deploy?template=6eokbzf5fl&ref=2vdt3dn9)
+2. Select a CPU pod (no GPU needed for the web app itself)
+3. Access the admin panel at your pod's proxy URL + `/admin`
+
+See the [ComfyUI Server](#comfyui-server-runpod) section above for setting up the required ComfyUI backend.
+
 ## Docker Deployment
 
 ### Pre-built Docker Image
