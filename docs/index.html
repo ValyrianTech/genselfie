@@ -1209,11 +1209,17 @@
                         <div class="setup-step-toggle">▼</div>
                     </div>
                     <div class="setup-step-content">
+                        <h4>Docker Image</h4>
+                        <p>GenSelfie is available as a pre-built Docker image on Docker Hub:</p>
+                        <div class="code-block">
+                            <code>docker pull valyriantech/genselfie:latest</code>
+                        </div>
+
                         <h4>Option A: Deploy on RunPod (Easiest)</h4>
                         <p>You can run GenSelfie on the same RunPod account, on a cheaper CPU-only pod.</p>
                         <ol>
                             <li>In RunPod, go to "Pods" → "Deploy"</li>
-                            <li>Search for "GenSelfie" template, or use the Docker image:
+                            <li>Search for "GenSelfie" template, or enter the Docker image manually:
                                 <div class="code-block">
                                     <code>valyriantech/genselfie:latest</code>
                                 </div>
@@ -1227,7 +1233,24 @@
                             <li>Deploy and wait for it to start</li>
                         </ol>
 
-                        <h4>Option B: Run Locally or on Any Server</h4>
+                        <div class="info-box">
+                            <div class="info-box-title">💡 Persistent Storage</div>
+                            <p>The Docker container stores data in <code>/workspace</code> by default. On RunPod, this is automatically mounted to your network volume, so your database and uploads persist across restarts.</p>
+                        </div>
+
+                        <h4>Option B: Run with Docker Anywhere</h4>
+                        <p>Run the Docker image on any server or your local machine:</p>
+                        <div class="code-block">
+                            <code>docker run -p 8000:8000 \<br>&nbsp;&nbsp;-e COMFYUI_URL=http://your-comfyui-ip:port \<br>&nbsp;&nbsp;-v ./data:/workspace \<br>&nbsp;&nbsp;valyriantech/genselfie:latest</code>
+                        </div>
+                        <p>Key options:</p>
+                        <ul>
+                            <li><code>-p 8000:8000</code> — Expose the web app on port 8000</li>
+                            <li><code>-e COMFYUI_URL=...</code> — Set your ComfyUI server URL (required)</li>
+                            <li><code>-v ./data:/workspace</code> — Mount a local folder for persistent storage</li>
+                        </ul>
+
+                        <h4>Option C: Run from Source</h4>
                         <ol>
                             <li>Make sure you have Python 3.12+ installed</li>
                             <li>Clone the repository:
@@ -1252,6 +1275,17 @@
                                 </div>
                             </li>
                         </ol>
+
+                        <h4>Environment Variables</h4>
+                        <p>Configure GenSelfie using these environment variables:</p>
+                        <ul>
+                            <li><code>COMFYUI_URL</code> — ComfyUI server URL (required)</li>
+                            <li><code>ADMIN_PASSWORD</code> — Admin panel password (auto-generated if not set)</li>
+                            <li><code>STRIPE_SECRET_KEY</code> / <code>STRIPE_PUBLISHABLE_KEY</code> — For Stripe payments</li>
+                            <li><code>LNBITS_URL</code> / <code>LNBITS_API_KEY</code> — For Lightning payments</li>
+                            <li><code>PUBLIC_URL</code> — Public URL for Stripe redirects (needed on RunPod)</li>
+                            <li><code>DATA_DIR</code> — Data directory (default: <code>/workspace</code>)</li>
+                        </ul>
 
                         <h4>First Login</h4>
                         <p>When you first run GenSelfie, it automatically generates an admin password. Check the console output or your <code>.env</code> file for the password.</p>

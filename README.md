@@ -149,13 +149,39 @@ GenSelfie/
 
 ## Docker Deployment
 
-Build and run with Docker:
+### Pre-built Docker Image
+
+The GenSelfie Docker image is available on Docker Hub:
+
+```bash
+docker pull valyriantech/genselfie:latest
+```
+
+Docker image: `valyriantech/genselfie:latest`
+
+### Running the Container
+
+```bash
+docker run -p 8000:8000 \
+  -e ADMIN_PASSWORD=your_password \
+  -e COMFYUI_URL=http://your-comfyui-server:8080 \
+  -v ./data:/workspace \
+  valyriantech/genselfie:latest
+```
+
+**Environment variables** can be passed with `-e` flags. See the [Environment Variables](#environment-variables) section for all available options.
+
+**Persistent storage**: Mount a volume to `/workspace` to persist the database and uploaded files. On RunPod, the `/workspace` directory is automatically mounted to the network volume.
+
+### Building Locally
+
+To build the Docker image yourself:
 
 ```bash
 # Build the image
 docker build -t genselfie .
 
-# Run with environment variables and persistent storage
+# Run locally
 docker run -p 8000:8000 \
   -e ADMIN_PASSWORD=your_password \
   -e COMFYUI_URL=http://your-comfyui-server:8080 \
@@ -163,7 +189,35 @@ docker run -p 8000:8000 \
   genselfie
 ```
 
-On RunPod, the `/workspace` directory is automatically mounted to the network volume.
+### Building and Publishing
+
+A helper script is provided to build and push to Docker Hub:
+
+```bash
+# Build and push with today's date tag
+python build_docker.py genselfie
+
+# Build and push with custom tag
+python build_docker.py genselfie --tag v1.0.0
+
+# Also tag and push as :latest
+python build_docker.py genselfie --latest
+
+# Use a different Docker Hub username
+python build_docker.py genselfie --username myusername --latest
+```
+
+### Docker Image Details
+
+The Dockerfile uses a multi-stage build:
+1. **Builder stage**: Installs dependencies in a virtual environment
+2. **Production stage**: Copies only the necessary files and virtual environment
+
+The image:
+- Based on `python:3.12`
+- Exposes port `8000`
+- Uses `/workspace` as the default data directory (RunPod compatible)
+- Runs via `start.sh` which starts the FastAPI server
 
 ## Supported Social Platforms
 
