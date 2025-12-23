@@ -1238,6 +1238,11 @@
                             <p>The Docker container stores data in <code>/workspace</code> by default. On RunPod, this is automatically mounted to your network volume, so your database and uploads persist across restarts.</p>
                         </div>
 
+                        <div class="info-box warning">
+                            <div class="info-box-title">⚠️ Important: Use Different Datacenters</div>
+                            <p>If both GenSelfie and ComfyUI are running in the <strong>same</strong> RunPod datacenter, the connection may fail due to internal DNS issues. Deploy them in <strong>different datacenters</strong> to avoid this problem.</p>
+                        </div>
+
                         <h4>Option B: Run with Docker Anywhere</h4>
                         <p>Run the Docker image on any server or your local machine:</p>
                         <div class="code-block">

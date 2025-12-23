@@ -157,6 +157,8 @@ The easiest way to deploy GenSelfie is on RunPod:
 
 See the [ComfyUI Server](#comfyui-server-runpod) section above for setting up the required ComfyUI backend.
 
+> ⚠️ **Important:** If both GenSelfie and ComfyUI are running in the *same* RunPod datacenter, the connection may fail due to internal DNS issues. Deploy them in **different datacenters** to avoid this problem.
+
 ## Docker Deployment
 
 ### Pre-built Docker Image

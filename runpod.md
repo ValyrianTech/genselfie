@@ -58,7 +58,7 @@ Mount a network volume to `/workspace` to persist data across restarts.
 
 ## Troubleshooting
 
-- **Server Offline**: Check ComfyUI URL in admin panel
+- **Server Offline**: Check ComfyUI URL in admin panel. Also ensure GenSelfie and ComfyUI are in **different datacenters** (same datacenter causes DNS issues).
 - **Stripe redirect fails**: Set PUBLIC_URL to your proxy URL
 - **Password lost**: Check `/workspace/.env` file
 

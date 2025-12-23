@@ -490,7 +490,13 @@
                 <button type="submit" class="btn btn-primary">Save URL</button>
             </form>
             
-            <p class="help-text" style="margin-top: 16px;">⚠️ Use the direct TCP port mapped to 8080 from RunPod, not the proxy link. Format: <code>xx.xx.xx.xx:xxxxx</code></p>
+            <div class="info-box" style="margin-top: 16px;">
+                <p>⚠️ Use the direct TCP port mapped to 8080 from RunPod, not the proxy link. Format: <code>xx.xx.xx.xx:xxxxx</code></p>
+            </div>
+            
+            <div class="warning-box" style="margin-top: 12px;">
+                <p><strong>⚠️ RunPod Datacenter Note:</strong> If both GenSelfie and ComfyUI are running in the <em>same</em> RunPod datacenter, the connection may fail due to internal DNS issues. Deploy them in <strong>different datacenters</strong> to avoid this problem.</p>
+            </div>
         </section>
 
         <!-- Stripe Settings Section -->
@@ -707,6 +713,38 @@
 }
 .image-popup-close:hover {
     color: var(--primary-color);
+}
+.info-box {
+    padding: 12px 16px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+    color: var(--text-color);
+}
+.info-box p {
+    margin: 0;
+}
+.info-box code {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+.warning-box {
+    padding: 12px 16px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    border-radius: 8px;
+    color: var(--text-color);
+}
+.warning-box p {
+    margin: 0;
+}
+.warning-box code {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
 }
 </style>
 
